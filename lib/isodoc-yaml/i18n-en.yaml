@@ -1,0 +1,4 @@
+text: text
+at: at
+binary_and: "%1 and %2"
+multiple_and: "%1, and %2"
