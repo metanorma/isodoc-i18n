@@ -1,0 +1,7 @@
+hash:
+  key1: val1
+  key2: val2
+arr: 
+  - arr1
+  - arr2
+text: "&#x74;ext2"

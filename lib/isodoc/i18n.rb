@@ -1,4 +1,6 @@
 require "yaml"
+require "htmlentities"
+require "metanorma-utils"
 
 module IsoDoc
   class I18n
@@ -24,20 +26,22 @@ module IsoDoc
 
     def load_yaml1(lang, script)
       case lang
-      when "en", "fr", "ru", "de", "es", "ar"
-        load_yaml2(lang)
       when "zh"
         if script == "Hans" then load_yaml2("zh-Hans")
         else load_yaml2("en")
         end
       else
-        load_yaml2("en")
+        load_yaml2(lang)
       end
     end
 
-    def load_yaml2(str)
+    # locally defined in calling class
+    def load_yaml2(lang)
       YAML.load_file(File.join(File.dirname(__FILE__),
-                               "../isodoc-yaml/i18n-#{str}.yaml"))
+                               "../isodoc-yaml/i18n-#{lang}.yaml"))
+    rescue StandardError
+      YAML.load_file(File.join(File.dirname(__FILE__),
+                               "../isodoc-yaml/i18n-en.yaml"))
     end
 
     def get
@@ -127,14 +131,5 @@ module IsoDoc
         c.encode(c.decode(text), :hexadecimal)
       end
     end
-
-    #     def multiple_and(names, andword)
-    #       return "" if names.empty?
-    #       return names[0] if names.length == 1
-    #
-    #       (names.length == 2) &&
-    #         (return l10n("#{names[0]} #{andword} #{names[1]}", @lang, @script))
-    #       l10n(names[0..-2].join(", ") + " #{andword} #{names[-1]}", @lang, @script)
-    #     end
   end
 end
