@@ -100,11 +100,23 @@ module IsoDoc
       xml.traverse do |n|
         next unless n.text?
 
-        n.replace(cleanup_entities(n.text.gsub(/ /, "").gsub(/:/, "：")
-          .gsub(/,/, "、").gsub(/\(/, "（").gsub(/\)/, "）")
-          .gsub(/\[/, "【").gsub(/\]/, "】"), is_xml: false))
+        n.replace(cleanup_entities(l10_zh1(n.text), is_xml: false))
       end
       xml.to_xml.gsub(/<b>/, "").gsub("</b>", "").gsub(/<\?[^>]+>/, "")
+    end
+
+    ZH_CHAR = "\\p{Han}|\\p{In CJK Symbols And Punctuation}|"\
+              "\\p{In Halfwidth And Fullwidth Forms}".freeze
+
+    # note: we can't differentiate comma from enumeration comma 、
+    def l10_zh1(text)
+      [":：", ",，", ".。", ")）", "]】", ":：", ";；", "?？", "!！"].each do |m|
+        text = text.gsub(/(?<=#{ZH_CHAR})#{Regexp.quote m[0]}/, m[1])
+      end
+      ["(（", "[【"].each do |m|
+        text = text.gsub(/#{Regexp.quote m[0]}(?=#{ZH_CHAR})/, m[1])
+      end
+      text.gsub(/(?<=#{ZH_CHAR}) (?=#{ZH_CHAR})/o, "")
     end
 
     def boolean_conj(list, conn)
