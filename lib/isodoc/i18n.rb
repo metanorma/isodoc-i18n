@@ -117,6 +117,9 @@ module IsoDoc
         text = text.gsub(/#{Regexp.quote m[0]}(?=#{ZH_CHAR})/, m[1])
       end
       text.gsub(/(?<=#{ZH_CHAR}) (?=#{ZH_CHAR})/o, "")
+        .gsub(/(?<=\d) (?=#{ZH_CHAR})/o, "")
+        .gsub(/(?<=#{ZH_CHAR}) (?=\d)/o, "")
+        .gsub(/(?<=#{ZH_CHAR}) (?=[A-Za-z](#{ZH_CHAR}|$))/o, "")
     end
 
     def boolean_conj(list, conn)
