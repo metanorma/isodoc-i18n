@@ -1,6 +1,7 @@
 require "yaml"
 require "htmlentities"
 require "metanorma-utils"
+require "twitter_cldr"
 
 module IsoDoc
   class I18n
@@ -144,6 +145,33 @@ module IsoDoc
         end.join
       else
         c.encode(c.decode(text), :hexadecimal)
+      end
+    end
+
+    # ord class is either SpelloutRules or OrdinalRules
+    def inflect_ordinal(num, term, ord_class)
+      if @labels["ordinal_keys"].nil? || @labels["ordinal_keys"].empty?
+        num.localize(tw_cldr_lang).to_rbnf_s(ord_class, @labels[ord_class])
+      else
+        num.localize(tw_cldr_lang)
+          .to_rbnf_s(ord_class, @labels[ord_class][ordinal_key(term)])
+      end
+    end
+
+    def ordinal_key(term)
+      @labels["ordinal_keys"].each_with_object([]) do |k, m|
+        m << case k
+             when "gender" then term["gender"]
+             when "number" then term["number"] || "sg"
+             when "case" then term["case"] || "nom"
+             end
+      end.join(".")
+    end
+
+    def tw_cldr_lang
+      if @lang == "zh" && @script == "Hans" then :"zh-cn"
+      elsif @lang == "zh" && @script == "Hant" then :"zh-tw"
+      else @lang.to_sym
       end
     end
   end

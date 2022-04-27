@@ -85,4 +85,18 @@ RSpec.describe IsoDoc::I18n do
     expect(c.boolean_conj(%w(a b c), "and")).to eq "a, b, and c"
     expect(c.boolean_conj(%w(a b c d), "and")).to eq "a, b, c, and d"
   end
+
+  it "does German ordinals" do
+    c = IsoDoc::I18n.new("de", "Latn", "spec/assets/de.yaml")
+    term = c.inflection[c.edition]
+    expect(c.inflect_ordinal(5, term, "SpelloutRules"))
+      .to eq "fünfte"
+  end
+
+  it "does Chinese ordinals" do
+    c = IsoDoc::I18n.new("zh", "Hans", "spec/assets/zh-Hans.yaml")
+    term = c.inflection[c.edition]
+    expect(c.inflect_ordinal(5, term, "SpelloutRules"))
+      .to eq "第五"
+  end
 end

@@ -1,0 +1,7 @@
+ordinal_keys: []
+SpelloutRules: spellout-ordinal
+edition: Auflage
+inflection:
+  Auflage:
+    gender: f
+
