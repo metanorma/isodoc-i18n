@@ -30,7 +30,7 @@ def xmlpp(xml)
 end
 
 def metadata(hash)
-  Hash[hash.sort].delete_if do |_k, v|
+  hash.sort.to_h.delete_if do |_k, v|
     v.nil? || (v.respond_to?(:empty?) && v.empty?)
   end
 end
