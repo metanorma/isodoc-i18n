@@ -5,9 +5,10 @@ require "twitter_cldr"
 
 module IsoDoc
   class I18n
-    def load_yaml(lang, script, i18nyaml = nil)
+    def load_yaml(lang, script, i18nyaml = nil, i18nhash = nil)
       ret = load_yaml1(lang, script)
       return normalise_hash(ret.merge(YAML.load_file(i18nyaml))) if i18nyaml
+      return normalise_hash(ret.merge(i18nhash)) if i18nhash
 
       normalise_hash(ret)
     end
@@ -53,10 +54,10 @@ module IsoDoc
       @labels[key] = val
     end
 
-    def initialize(lang, script, i18nyaml = nil)
+    def initialize(lang, script, i18nyaml: nil, i18nhash: nil)
       @lang = lang
       @script = script
-      y = load_yaml(lang, script, i18nyaml)
+      y = load_yaml(lang, script, i18nyaml, i18nhash)
       @labels = y
       @labels["language"] = @lang
       @labels["script"] = @script

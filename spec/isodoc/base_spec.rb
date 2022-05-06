@@ -30,7 +30,15 @@ RSpec.describe IsoDoc::I18n do
   end
 
   it "loads language file overrides" do
-    c = IsoDoc::I18n.new("en", "Latn", "spec/assets/new.yaml")
+    c = IsoDoc::I18n.new("en", "Latn", i18nyaml: "spec/assets/new.yaml")
+    expect(c.text).to eq "text2"
+    expect(c.at).to eq "at"
+    expect(c.hash.to_s).to be_equivalent_to '{"key1"=>"val1", "key2"=>"val2"}'
+    expect(c.arr.to_s).to eq '["arr1", "arr2"]'
+  end
+
+  it "loads language hash overrides" do
+    c = IsoDoc::I18n.new("en", "Latn", i18nhash: YAML.load_file("spec/assets/new.yaml"))
     expect(c.text).to eq "text2"
     expect(c.at).to eq "at"
     expect(c.hash.to_s).to be_equivalent_to '{"key1"=>"val1", "key2"=>"val2"}'
@@ -87,21 +95,21 @@ RSpec.describe IsoDoc::I18n do
   end
 
   it "does German ordinals" do
-    c = IsoDoc::I18n.new("de", "Latn", "spec/assets/de.yaml")
+    c = IsoDoc::I18n.new("de", "Latn", i18nyaml: "spec/assets/de.yaml")
     term = c.inflection[c.edition]
     expect(c.inflect_ordinal(5, term, "SpelloutRules"))
       .to eq "fünfte"
   end
 
   it "does Chinese ordinals" do
-    c = IsoDoc::I18n.new("zh", "Hans", "spec/assets/zh-Hans.yaml")
+    c = IsoDoc::I18n.new("zh", "Hans", i18nyaml: "spec/assets/zh-Hans.yaml")
     term = c.inflection[c.edition]
     expect(c.inflect_ordinal(5, term, "SpelloutRules"))
       .to eq "第五"
   end
 
   it "does Klingon ordinals" do
-    c = IsoDoc::I18n.new("tlh", "Hans", "spec/assets/zh-Hans.yaml")
+    c = IsoDoc::I18n.new("tlh", "Hans", i18nyaml: "spec/assets/zh-Hans.yaml")
     term = c.inflection[c.edition]
     expect(c.inflect_ordinal(5, term, "SpelloutRules"))
       .to eq "fifth"
