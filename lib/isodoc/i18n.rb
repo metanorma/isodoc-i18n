@@ -54,9 +54,10 @@ module IsoDoc
       @labels[key] = val
     end
 
-    def initialize(lang, script, i18nyaml: nil, i18nhash: nil)
+    def initialize(lang, script, locale: nil, i18nyaml: nil, i18nhash: nil)
       @lang = lang
       @script = script
+      @locale = locale
       y = load_yaml(lang, script, i18nyaml, i18nhash)
       @labels = y
       @labels["language"] = @lang
@@ -66,17 +67,16 @@ module IsoDoc
       end
     end
 
-    def self.l10n(text, lang = @lang, script = @script)
-      l10n(text, lang, script)
+    def self.l10n(text, lang = @lang, script = @script, locale = @locale)
+      l10n(text, lang, script, locale)
     end
 
-    # TODO: move to localization file
     # function localising spaces and punctuation.
     # Not clear if period needs to be localised for zh
-    def l10n(text, lang = @lang, script = @script)
-      if lang == "zh" && script == "Hans" then l10n_zh(text)
-      else bidiwrap(text, lang, script)
-      end
+    def l10n(text, lang = @lang, script = @script, locale = @locale)
+      lang == "zh" && script == "Hans" and text = l10n_zh(text)
+      lang == "fr" && text = l10n_fr(text, locale || "FR")
+      bidiwrap(text, lang, script)
     end
 
     def bidiwrap(text, lang, script)
@@ -107,21 +107,49 @@ module IsoDoc
       xml.to_xml.gsub(/<b>/, "").gsub("</b>", "").gsub(/<\?[^>]+>/, "")
     end
 
+    def l10n_fr(text, locale)
+      xml = Nokogiri::HTML::DocumentFragment.parse(text)
+      xml.traverse do |n|
+        next unless n.text?
+
+        n.replace(cleanup_entities(l10n_fr1(n.text, locale), is_xml: false))
+      end
+      xml.to_xml
+    end
+
     ZH_CHAR = "\\p{Han}|\\p{In CJK Symbols And Punctuation}|"\
               "\\p{In Halfwidth And Fullwidth Forms}".freeze
 
     # note: we can't differentiate comma from enumeration comma 、
     def l10_zh1(text)
+      l10n_zh_remove_space(l10n_zh_punct(text))
+    end
+
+    def l10n_zh_punct(text)
       [":：", ",，", ".。", ")）", "]】", ":：", ";；", "?？", "!！"].each do |m|
         text = text.gsub(/(?<=#{ZH_CHAR})#{Regexp.quote m[0]}/, m[1])
+        text = text.gsub(/^#{Regexp.quote m[0]}/, m[1])
       end
       ["(（", "[【"].each do |m|
         text = text.gsub(/#{Regexp.quote m[0]}(?=#{ZH_CHAR})/, m[1])
       end
+      text
+    end
+
+    def l10n_zh_remove_space(text)
       text.gsub(/(?<=#{ZH_CHAR}) (?=#{ZH_CHAR})/o, "")
         .gsub(/(?<=\d) (?=#{ZH_CHAR})/o, "")
         .gsub(/(?<=#{ZH_CHAR}) (?=\d)/o, "")
         .gsub(/(?<=#{ZH_CHAR}) (?=[A-Za-z](#{ZH_CHAR}|$))/o, "")
+    end
+
+    def l10n_fr1(text, locale)
+      text = text.gsub(/(?<=\p{Alnum})([»›;?!])/, "\u202f\\1")
+      text = text.gsub(/^([»›;?!])/, "\u202f\\1")
+      text = text.gsub(/([«‹])/, "\\1\u202f")
+      colonsp = locale == "CH" ? "\u202f" : "\u00a0"
+      text = text.gsub(/(?<=\p{Alnum})(:)/, "#{colonsp}\\1")
+      text.gsub(/^(:)/, "#{colonsp}\\1")
     end
 
     def boolean_conj(list, conn)

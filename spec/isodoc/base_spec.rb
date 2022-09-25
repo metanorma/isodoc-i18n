@@ -38,7 +38,8 @@ RSpec.describe IsoDoc::I18n do
   end
 
   it "loads language hash overrides" do
-    c = IsoDoc::I18n.new("en", "Latn", i18nhash: YAML.load_file("spec/assets/new.yaml"))
+    c = IsoDoc::I18n.new("en", "Latn",
+                         i18nhash: YAML.load_file("spec/assets/new.yaml"))
     expect(c.text).to eq "text2"
     expect(c.at).to eq "at"
     expect(c.hash.to_s).to be_equivalent_to '{"key1"=>"val1", "key2"=>"val2"}'
@@ -83,6 +84,25 @@ RSpec.describe IsoDoc::I18n do
     c = IsoDoc::I18n.new("en", "Latn")
     expect(c.l10n("Code (hello, world.)", "en", "Arab"))
       .to be_equivalent_to "&#x61c;Code (hello, world.)&#x61c;"
+  end
+
+  it "does French localisation" do
+    e = HTMLEntities.new
+    c = IsoDoc::I18n.new("fr", "Latn")
+    expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
+      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; "\
+                           "and&#xa0;: code&#x202f;!"
+    expect(e.encode(c.l10n("Code; &#xab;code&#xbb; and: code!"), :hexadecimal))
+      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; "\
+                           "and&#xa0;: code&#x202f;!"
+    c = IsoDoc::I18n.new("fr", "Latn", locale: "FR")
+    expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
+      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; "\
+                           "and&#xa0;: code&#x202f;!"
+    c = IsoDoc::I18n.new("fr", "Latn", locale: "CH")
+    expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
+      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; "\
+                           "and&#x202f;: code&#x202f;!"
   end
 
   it "does boolean conjunctions" do
