@@ -98,23 +98,24 @@ module IsoDoc
     end
 
     def l10n_zh(text)
-      xml = Nokogiri::HTML::DocumentFragment.parse(text)
+      xml = Nokogiri::XML::DocumentFragment.parse(text)
       xml.traverse do |n|
         next unless n.text?
 
         n.replace(cleanup_entities(l10_zh1(n.text), is_xml: false))
       end
-      xml.to_xml.gsub(/<b>/, "").gsub("</b>", "").gsub(/<\?[^>]+>/, "")
+      xml.to_xml(encoding: "UTF-8").gsub(/<b>/, "").gsub("</b>", "")
+        .gsub(/<\?[^>]+>/, "")
     end
 
     def l10n_fr(text, locale)
-      xml = Nokogiri::HTML::DocumentFragment.parse(text)
+      xml = Nokogiri::XML::DocumentFragment.parse(text)
       xml.traverse do |n|
         next unless n.text?
 
         n.replace(cleanup_entities(l10n_fr1(n.text, locale), is_xml: false))
       end
-      xml.to_xml
+      xml.to_xml(encoding: "UTF-8")
     end
 
     ZH_CHAR = "\\p{Han}|\\p{In CJK Symbols And Punctuation}|"\
@@ -171,11 +172,11 @@ module IsoDoc
       c = HTMLEntities.new
       if is_xml
         text.split(/([<>])/).each_slice(4).map do |a|
-          a[0] = c.encode(c.decode(a[0]), :hexadecimal)
+          a[0] = c.decode(a[0])
           a
         end.join
       else
-        c.encode(c.decode(text), :hexadecimal)
+        c.decode(text)
       end
     end
 
