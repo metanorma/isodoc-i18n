@@ -144,12 +144,14 @@ module IsoDoc
     end
 
     def l10n_fr1(text, locale)
-      text = text.gsub(/(?<=\p{Alnum})([»›;?!])/, "\u202f\\1")
+      text = text.gsub(/(?<=\p{Alnum})([»›;?!])(?=\s)/, "\u202f\\1")
+      text = text.gsub(/(?<=\p{Alnum})([»›;?!])$/, "\u202f\\1")
       text = text.gsub(/^([»›;?!])/, "\u202f\\1")
       text = text.gsub(/([«‹])/, "\\1\u202f")
       colonsp = locale == "CH" ? "\u202f" : "\u00a0"
-      text = text.gsub(/(?<=\p{Alnum})(:)/, "#{colonsp}\\1")
-      text.gsub(/^(:)/, "#{colonsp}\\1")
+      text = text.gsub(/(?<=\p{Alnum})(:)(?=\s)/, "#{colonsp}\\1")
+      text = text.gsub(/(?<=\p{Alnum})(:)$/, "#{colonsp}\\1")
+      text.gsub(/^(:\s)/, "#{colonsp}\\1")
     end
 
     def boolean_conj(list, conn)

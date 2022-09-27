@@ -103,6 +103,8 @@ RSpec.describe IsoDoc::I18n do
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; "\
                            "and&#x202f;: code&#x202f;!"
+    expect(e.encode(c.l10n("http://xyz a;b"), :hexadecimal))
+      .to be_equivalent_to "http://xyz a;b"
   end
 
   it "does boolean conjunctions" do
