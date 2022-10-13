@@ -5,10 +5,13 @@ require "twitter_cldr"
 
 module IsoDoc
   class I18n
+    Hash.include Metanorma::Utils::Hash
+
     def load_yaml(lang, script, i18nyaml = nil, i18nhash = nil)
       ret = load_yaml1(lang, script)
-      return normalise_hash(ret.merge(YAML.load_file(i18nyaml))) if i18nyaml
-      return normalise_hash(ret.merge(i18nhash)) if i18nhash
+      i18nyaml and
+        return normalise_hash(ret.deep_merge(YAML.load_file(i18nyaml)))
+      i18nhash and return normalise_hash(ret.deep_merge(i18nhash))
 
       normalise_hash(ret)
     end
@@ -118,7 +121,7 @@ module IsoDoc
       xml.to_xml(encoding: "UTF-8")
     end
 
-    ZH_CHAR = "\\p{Han}|\\p{In CJK Symbols And Punctuation}|"\
+    ZH_CHAR = "\\p{Han}|\\p{In CJK Symbols And Punctuation}|" \
               "\\p{In Halfwidth And Fullwidth Forms}".freeze
 
     # note: we can't differentiate comma from enumeration comma 、
@@ -196,13 +199,21 @@ module IsoDoc
       num.localize(:en)
     end
 
+    INFLECTIONS = {
+      number: "sg",
+      case: "nom",
+      gender: "masc",
+      person: "3rd",
+      voice: "act",
+      mood: "ind",
+      tense: "pres",
+    }.freeze
+
+    INFLECTION_ORDER = %i(voice mood tense number case gender person).freeze
+
     def ordinal_key(term)
       @labels["ordinal_keys"].each_with_object([]) do |k, m|
-        m << case k
-             when "gender" then term["gender"]
-             when "number" then term["number"] || "sg"
-             when "case" then term["case"] || "nom"
-             end
+        m << (term[k] || INFLECTIONS[k.to_sym])
       end.join(".")
     end
 
@@ -211,6 +222,19 @@ module IsoDoc
       elsif @lang == "zh" && @script == "Hant" then :"zh-tw"
       else @lang.to_sym
       end
+    end
+
+    # can skip category if not present
+    def inflect(word, options)
+      i = @labels.dig("inflection", word) or return word
+      i.is_a? String and return i
+
+      INFLECTION_ORDER.each do |x|
+        infl = options[x] || INFLECTIONS[x]
+        i = i[infl] if i[infl]
+        i.is_a? String and return i
+      end
+      word
     end
   end
 end

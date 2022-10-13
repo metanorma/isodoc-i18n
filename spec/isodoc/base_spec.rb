@@ -90,18 +90,18 @@ RSpec.describe IsoDoc::I18n do
     e = HTMLEntities.new
     c = IsoDoc::I18n.new("fr", "Latn")
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; "\
+      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"
     expect(e.encode(c.l10n("Code; &#xab;code&#xbb; and: code!"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; "\
+      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"
     c = IsoDoc::I18n.new("fr", "Latn", locale: "FR")
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; "\
+      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"
     c = IsoDoc::I18n.new("fr", "Latn", locale: "CH")
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; "\
+      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#x202f;: code&#x202f;!"
     expect(e.encode(c.l10n("http://xyz a;b"), :hexadecimal))
       .to be_equivalent_to "http://xyz a;b"
@@ -135,5 +135,24 @@ RSpec.describe IsoDoc::I18n do
     term = c.inflection[c.edition]
     expect(c.inflect_ordinal(5, term, "SpelloutRules"))
       .to eq "fifth"
+  end
+
+  it "does inflections" do
+    c = IsoDoc::I18n.new("en", "Latn", i18nyaml: "spec/assets/new.yaml")
+    expect(c.inflect("John", number: "sg")).to eq "John"
+    expect(c.inflect("Fred", number: "sg")).to eq "Fred"
+    expect(c.inflect("Fred", number: "pl")).to eq "Freds"
+    expect(c.inflect("Fred", number: "du")).to eq "Fred"
+    expect(c.inflect("Fred", tense: "pres")).to eq "Fred"
+    expect(c.inflect("Man", case: "dat")).to eq "viri"
+    expect(c.inflect("Man", number: "sg", case: "dat")).to eq "viri"
+    expect(c.inflect("Man", number: "pl", case: "acc")).to eq "virem"
+    expect(c.inflect("Woman", number: "pl", case: "gen")).to eq "mulierum"
+    expect(c.inflect("Good", number: "pl", case: "gen")).to eq "bonorum"
+    expect(c.inflect("Good", number: "pl", case: "gen", gender: "fem"))
+      .to eq "bonarum"
+    expect(c.inflect("Walk", person: "2nd")).to eq "ambulas"
+    expect(c.inflect("Walk", person: "2nd", number: "pl", mood: "subj"))
+      .to eq "ambuletis"
   end
 end

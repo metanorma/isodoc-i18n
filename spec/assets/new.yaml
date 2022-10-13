@@ -5,3 +5,49 @@ arr:
   - arr1
   - arr2
 text: "&#x74;ext2"
+inflection:
+  Fred:
+    sg: Fred
+    pl: Freds
+  Man:
+    dat: viri
+    acc: virem
+  Woman:
+    sg:
+      nom: mulier
+      gen: mulieris
+    pl:
+      nom: mulieres
+      gen: mulierum
+  Good:
+    sg:
+      nom:
+        masc: bonus
+        fem: bona
+        neut: bonum
+      gen:
+        masc: boni
+        fem: bonae
+        neut: boni
+    pl:
+      nom:
+        masc: boni
+        fem: bonae
+        neut: bona
+      gen:
+        masc: bonorum
+        fem: bonarum
+        neut: bonorum
+  Walk:
+    act:
+      ind:
+        pres:
+          sg:
+            1st: ambulo
+            2nd: ambulas
+      subj:
+        pres:
+          pl:
+            1st: ambulemus
+            2nd: ambuletis
+
