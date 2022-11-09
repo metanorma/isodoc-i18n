@@ -16,8 +16,10 @@ Gem::Specification.new do |spec|
 
   spec.bindir        = "bin"
   spec.require_paths = ["lib"]
-  spec.files         = `git ls-files`.split("\n")
-  spec.test_files    = `git ls-files -- {spec}/*`.split("\n")
+  spec.files         = `git ls-files -z`.split("\x0").reject do |f|
+    f.match(%r{^(test|spec|features|bin|.github)/}) \
+    || f.match(%r{Rakefile|bin/rspec})
+  end
   spec.required_ruby_version = Gem::Requirement.new(">= 2.7.0")
 
   spec.add_dependency "htmlentities", "~> 4.3.4"
@@ -34,5 +36,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "simplecov", "~> 0.15"
   spec.add_development_dependency "timecop", "~> 0.9"
   spec.add_development_dependency "webmock"
-  #spec.metadata["rubygems_mfa_required"] = "true"
+  # spec.metadata["rubygems_mfa_required"] = "true"
 end
