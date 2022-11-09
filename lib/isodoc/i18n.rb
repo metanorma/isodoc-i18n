@@ -2,6 +2,7 @@ require "yaml"
 require "htmlentities"
 require "metanorma-utils"
 require "twitter_cldr"
+require_relative "i18n/version"
 
 module IsoDoc
   class I18n
