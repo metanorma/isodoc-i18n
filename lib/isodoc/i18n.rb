@@ -78,7 +78,7 @@ module IsoDoc
     # function localising spaces and punctuation.
     # Not clear if period needs to be localised for zh
     def l10n(text, lang = @lang, script = @script, locale = @locale)
-      lang == "zh" && script == "Hans" and text = l10n_zh(text)
+      lang == "zh" and text = l10n_zh(text, script)
       lang == "fr" && text = l10n_fr(text, locale || "FR")
       bidiwrap(text, lang, script)
     end
@@ -101,12 +101,12 @@ module IsoDoc
          .default_script(@lang))]
     end
 
-    def l10n_zh(text)
+    def l10n_zh(text, script = "Hans")
       xml = Nokogiri::XML::DocumentFragment.parse(text)
       xml.traverse do |n|
         next unless n.text?
 
-        n.replace(cleanup_entities(l10_zh1(n.text), is_xml: false))
+        n.replace(cleanup_entities(l10_zh1(n.text, script), is_xml: false))
       end
       xml.to_xml(encoding: "UTF-8").gsub(/<b>/, "").gsub("</b>", "")
         .gsub(/<\?[^>]+>/, "")
@@ -126,7 +126,7 @@ module IsoDoc
               "\\p{In Halfwidth And Fullwidth Forms}".freeze
 
     # note: we can't differentiate comma from enumeration comma 、
-    def l10_zh1(text)
+    def l10_zh1(text, _script)
       l10n_zh_remove_space(l10n_zh_punct(text))
     end
 
