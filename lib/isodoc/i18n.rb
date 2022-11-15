@@ -186,12 +186,13 @@ module IsoDoc
 
     # ord class is either SpelloutRules or OrdinalRules
     def inflect_ordinal(num, term, ord_class)
-      if @labels["ordinal_keys"].nil? || @labels["ordinal_keys"].empty?
-        tw_cldr_localize(num).to_rbnf_s(ord_class, @labels[ord_class])
-      else
-        tw_cldr_localize(num)
-          .to_rbnf_s(ord_class, @labels[ord_class][ordinal_key(term)])
-      end
+      lbl = if @labels["ordinal_keys"].nil? || @labels["ordinal_keys"].empty?
+              @labels[ord_class]
+            else @labels[ord_class][ordinal_key(term)]
+            end
+      tw_cldr_localize(num).to_rbnf_s(ord_class, lbl)
+    rescue StandardError
+      num.localize(@lang.to_sym).to_rbnf_s(ord_class, lbl)
     end
 
     def tw_cldr_localize(num)

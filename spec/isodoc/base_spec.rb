@@ -128,6 +128,10 @@ RSpec.describe IsoDoc::I18n do
     term = c.inflection[c.edition]
     expect(c.inflect_ordinal(5, term, "SpelloutRules"))
       .to eq "第五"
+    c = IsoDoc::I18n.new("zh", "Hant", i18nyaml: "spec/assets/zh-Hans.yaml")
+    term = c.inflection[c.edition]
+    expect(c.inflect_ordinal(5, term, "SpelloutRules"))
+      .to eq "第五"
   end
 
   it "does Klingon ordinals" do
