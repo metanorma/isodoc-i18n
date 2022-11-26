@@ -5,6 +5,7 @@ arr:
   - arr1
   - arr2
 text: "&#x74;ext2"
+multiple_and: "%1與%2"
 inflection:
   Fred:
     sg: Fred

@@ -167,9 +167,14 @@ module IsoDoc
         .sub(/%2/, list[1])
       else
         @labels["multiple_#{conn}"]
-          .sub(/%1/, l10n(list[0..-2].join(", "), @lang, @script))
+          .sub(/%1/, l10n(list[0..-2].join(enum_comma), @lang, @script))
           .sub(/%2/, list[-1])
       end
+    end
+
+    def enum_comma
+      %w(Hans Hant).include?(@script) and return "、"
+      ", "
     end
 
     def cleanup_entities(text, is_xml: true)

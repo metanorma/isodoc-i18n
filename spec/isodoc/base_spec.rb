@@ -117,13 +117,23 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "http://xyz a;b"
   end
 
-  it "does boolean conjunctions" do
+  it "does boolean conjunctions in English" do
     c = IsoDoc::I18n.new("en", "Latn")
     expect(c.boolean_conj([], "and")).to eq ""
     expect(c.boolean_conj(%w(a), "and")).to eq "a"
     expect(c.boolean_conj(%w(a b), "and")).to eq "a and b"
     expect(c.boolean_conj(%w(a b c), "and")).to eq "a, b, and c"
     expect(c.boolean_conj(%w(a b c d), "and")).to eq "a, b, c, and d"
+  end
+
+  it "does boolean conjunctions in Traditional Chinese" do
+    c = IsoDoc::I18n.new("zh", "Hant",
+                         i18nhash: YAML.load_file("spec/assets/new.yaml"))
+    expect(c.boolean_conj([], "and")).to eq ""
+    expect(c.boolean_conj(%w(a), "and")).to eq "a"
+    expect(c.boolean_conj(%w(a b), "and")).to eq "a and b"
+    expect(c.boolean_conj(%w(a b c), "and")).to eq "a、b與c"
+    expect(c.boolean_conj(%w(a b c d), "and")).to eq "a、b、c與d"
   end
 
   it "does German ordinals" do
