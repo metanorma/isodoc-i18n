@@ -106,7 +106,7 @@ module IsoDoc
       xml.traverse do |n|
         next unless n.text?
 
-        n.replace(cleanup_entities(l10_zh1(n.text, script), is_xml: false))
+        n.replace(l10_zh1(cleanup_entities(n.text, is_xml: false), script))
       end
       xml.to_xml(encoding: "UTF-8").gsub(/<b>/, "").gsub("</b>", "")
         .gsub(/<\?[^>]+>/, "")
@@ -117,7 +117,7 @@ module IsoDoc
       xml.traverse do |n|
         next unless n.text?
 
-        n.replace(cleanup_entities(l10n_fr1(n.text, locale), is_xml: false))
+        n.replace(l10n_fr1(cleanup_entities(n.text, is_xml: false), locale))
       end
       xml.to_xml(encoding: "UTF-8")
     end
@@ -131,7 +131,7 @@ module IsoDoc
     end
 
     def l10n_zh_punct(text)
-      [":：", ",，", ".。", ")）", "]］", ":：", ";；", "?？", "!！"].each do |m|
+      [":：", ",，", ".。", ")）", "]］", ":：", ";；", "?？", "!！", "–～"].each do |m|
         text = text.gsub(/(?<=#{ZH_CHAR})#{Regexp.quote m[0]}/, m[1])
         text = text.gsub(/^#{Regexp.quote m[0]}/, m[1])
       end
