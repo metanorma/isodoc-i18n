@@ -57,21 +57,21 @@ RSpec.describe IsoDoc::I18n do
   it "does Traditional Chinese localisation" do
     c = IsoDoc::I18n.new("zh", "Hant")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> (你好， 世界。）"
+      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
   end
 
   it "does Simplified Chinese localisation" do
     c = IsoDoc::I18n.new("zh", "Hans")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> (你好， 世界。）"
+      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
   end
 
   it "does Hebrew RTL localisation" do
