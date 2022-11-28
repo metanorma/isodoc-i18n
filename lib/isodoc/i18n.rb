@@ -131,7 +131,7 @@ module IsoDoc
     end
 
     def l10n_zh_punct(text)
-      [":：", ",，", ".。", ")）", "]］", ":：", ";；", "?？", "!！", "–～"].each do |m|
+      [":：", ",，", ".．", ")）", "]］", ":：", ";；", "?？", "!！", "–～"].each do |m|
         text = text.gsub(/#{Regexp.quote m[0]}/, m[1])
       end
       ["(（", "[［"].each do |m|
