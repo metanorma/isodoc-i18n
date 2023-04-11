@@ -1,69 +1,16 @@
-require "yaml"
 require "htmlentities"
-require "metanorma-utils"
 require "twitter_cldr"
 require_relative "i18n/version"
+require_relative "i18n-yaml"
 
 module IsoDoc
   class I18n
-    Hash.include Metanorma::Utils::Hash
-
-    def load_yaml(lang, script, i18nyaml = nil, i18nhash = nil)
-      ret = load_yaml1(lang, script)
-      i18nyaml and
-        return normalise_hash(ret.deep_merge(YAML.load_file(i18nyaml)))
-      i18nhash and return normalise_hash(ret.deep_merge(i18nhash))
-
-      normalise_hash(ret)
-    end
-
-    def normalise_hash(ret)
-      case ret
-      when Hash
-        ret.each do |k, v|
-          ret[k] = normalise_hash(v)
-        end
-        ret
-      when Array then ret.map { |n| normalise_hash(n) }
-      when String then cleanup_entities(ret.unicode_normalize(:nfc))
-      else ret
-      end
-    end
-
-    def load_yaml1(lang, script)
-      case lang
-      when "zh"
-        if script == "Hans" then load_yaml2("zh-Hans")
-        else load_yaml2("en")
-        end
-      else
-        load_yaml2(lang)
-      end
-    end
-
-    # locally defined in calling class
-    def load_yaml2(lang)
-      YAML.load_file(File.join(File.dirname(__FILE__),
-                               "../isodoc-yaml/i18n-#{lang}.yaml"))
-    rescue StandardError
-      YAML.load_file(File.join(File.dirname(__FILE__),
-                               "../isodoc-yaml/i18n-en.yaml"))
-    end
-
-    def get
-      @labels
-    end
-
-    def set(key, val)
-      @labels[key] = val
-    end
-
     def initialize(lang, script, locale: nil, i18nyaml: nil, i18nhash: nil)
       @lang = lang
       @script = script
       @locale = locale
-      y = load_yaml(lang, script, i18nyaml, i18nhash)
-      @labels = y
+      @c = HTMLEntities.new
+      @labels = load_yaml(lang, script, i18nyaml, i18nhash)
       @labels["language"] = @lang
       @labels["script"] = @script
       @labels.each do |k, _v|
@@ -158,6 +105,29 @@ module IsoDoc
       text.gsub(/^(:\s)/, "#{colonsp}\\1")
     end
 
+    def self.cjk_extend(text)
+      cjk_extend(text)
+    end
+
+    def cjk_extend(title)
+      @c.decode(title).chars.map.with_index do |n, i|
+        if i.zero? || !interleave_space_cjk?(title[i - 1] + title[i])
+          n
+        else "\u3000#{n}"
+        end
+      end.join
+    end
+
+    def interleave_space_cjk?(text)
+      text.size == 2 or return
+      ["\u2014\u2014", "\u2025\u2025", "\u2026\u2026", "\u22ef\u22ef"].include?(text) ||
+        /\d\d|\p{Latin}\p{Latin}|[[:space:]]/.match?(text) ||
+        /^[\u2018\u201c(\u3014\[{\u3008\u300a\u300c\u300e\u3010\u2985\u3018\u3016\u00ab\u301d]/.match?(text) ||
+        /[\u2019\u201d)\u3015\]}\u3009\u300b\u300d\u300f\u3011\u2986\u3019\u3017\u00bb\u301f]$/.match?(text) ||
+        /[\u3002.\u3001,\u30fb:;\u2010\u301c\u30a0\u2013!?\u203c\u2047\u2048\u2049]/.match?(text) and return false
+      true
+    end
+
     def boolean_conj(list, conn)
       case list.size
       when 0 then ""
@@ -177,14 +147,13 @@ module IsoDoc
     end
 
     def cleanup_entities(text, is_xml: true)
-      c = HTMLEntities.new
       if is_xml
         text.split(/([<>])/).each_slice(4).map do |a|
-          a[0] = c.decode(a[0])
+          a[0] = @c.decode(a[0])
           a
         end.join
       else
-        c.decode(text)
+        @c.decode(text)
       end
     end
 

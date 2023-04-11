@@ -179,4 +179,15 @@ RSpec.describe IsoDoc::I18n do
     expect(c.inflect("Walk", person: "2nd", number: "pl", mood: "subj"))
       .to eq "ambuletis"
   end
+
+  it "interleaves space in CJK" do
+    c = IsoDoc::I18n.new("en", "Latn")
+    expect(c.cjk_extend("解題")).to eq "解　題"
+    expect(c.cjk_extend("解——題")).to eq "解　——　題"
+    expect(c.cjk_extend("解　題")).to eq "解　題"
+    expect(c.cjk_extend("解題ific解題")).to eq "解　題　ific　解　題"
+    expect(c.cjk_extend("解題29")).to eq "解　題　29"
+    expect(c.cjk_extend("(解(題)解題)")).to eq "(解　(題)　解　題)"
+    expect(c.cjk_extend("解!題")).to eq "解!題"
+  end
 end
