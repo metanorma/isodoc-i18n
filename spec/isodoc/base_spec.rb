@@ -190,4 +190,38 @@ RSpec.describe IsoDoc::I18n do
     expect(c.cjk_extend("(解(題)解題)")).to eq "(解　(題)　解　題)"
     expect(c.cjk_extend("解!題")).to eq "解!題"
   end
+
+  it "parses dates" do
+    c = IsoDoc::I18n.new("en", "Latn")
+    expect(c.date("2011-02-03", "%F")).to eq "2011-02-03"
+    expect(c.date("2011-02-03", "%-m%_%Y")).to eq "2 2011"
+    expect(c.date("2011-02-03T09:04:05", "%F%_%T")).to eq "2011-02-03 09:04:05"
+    expect(c.date("2011-02-03T09:04:05", "%F%_%l%_%p")).to eq "2011-02-03  9 AM"
+    expect(c.date("2011-02-03T21:04:05", "%F%_%l%_%p")).to eq "2011-02-03  9 PM"
+    expect(c.date("2011-02-03T09:04:05", "%F%_%l%_%P")).to eq "2011-02-03  9 am"
+    expect(c.date("2011-02-03T21:04:05", "%F%_%l%_%P")).to eq "2011-02-03  9 pm"
+    expect(c.date("2011-02-03", "%A%_%B")).to eq "Thursday February"
+    expect(c.date("2011-02-03", "%^A%_%^B")).to eq "THURSDAY FEBRUARY"
+    expect(c.date("2011-02-03", "%a%_%b")).to eq "Thu Feb"
+    expect(c.date("2011-02-03", "%^a%_%^b")).to eq "THU FEB"
+    expect(c.date("2011-02-03", "%a%_%h")).to eq "Thu Feb"
+    expect(c.date("2011-02-03", "%^a%_%^h")).to eq "THU FEB"
+  end
+
+  it "parses dates in Irish" do
+    c = IsoDoc::I18n.new("ga", "Latn")
+    expect(c.date("2011-02-03", "%F")).to eq "2011-02-03"
+    expect(c.date("2011-02-03", "%-m%_%Y")).to eq "2 2011"
+    expect(c.date("2011-02-03T09:04:05", "%F%_%T")).to eq "2011-02-03 09:04:05"
+    expect(c.date("2011-02-03T09:04:05", "%F%_%l%_%p")).to eq "2011-02-03  9 R.N."
+    expect(c.date("2011-02-03T21:04:05", "%F%_%l%_%p")).to eq "2011-02-03  9 I.N."
+    expect(c.date("2011-02-03T09:04:05", "%F%_%l%_%P")).to eq "2011-02-03  9 r.n."
+    expect(c.date("2011-02-03T21:04:05", "%F%_%l%_%P")).to eq "2011-02-03  9 i.n."
+    expect(c.date("2011-02-03", "%A%_%B")).to eq "Déardaoin Feabhra"
+    expect(c.date("2011-02-03", "%^A%_%^B")).to eq "DÉARDAOIN FEABHRA"
+    expect(c.date("2011-02-03", "%a%_%b")).to eq "Déar Feabh"
+    expect(c.date("2011-02-03", "%^a%_%^b")).to eq "DÉAR FEABH"
+    expect(c.date("2011-02-03", "%a%_%h")).to eq "Déar Feabh"
+    expect(c.date("2011-02-03", "%^a%_%^h")).to eq "DÉAR FEABH"
+  end
 end

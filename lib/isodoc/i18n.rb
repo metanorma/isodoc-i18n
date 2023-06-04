@@ -2,6 +2,7 @@ require "htmlentities"
 require "twitter_cldr"
 require_relative "i18n/version"
 require_relative "i18n-yaml"
+require_relative "date"
 
 module IsoDoc
   class I18n
@@ -9,8 +10,20 @@ module IsoDoc
       @lang = lang
       @script = script
       @locale = locale
+      @cal = calendar_data
+      @cal_en = TwitterCldr::Shared::Calendar.new(:en)
       @c = HTMLEntities.new
-      @labels = load_yaml(lang, script, i18nyaml, i18nhash)
+      init_labels(i18nyaml, i18nhash)
+    end
+
+    def calendar_data
+      TwitterCldr::Shared::Calendar.new(tw_cldr_lang)
+    rescue StandardError
+      TwitterCldr::Shared::Calendar.new(:en)
+    end
+
+    def init_labels(i18nyaml, i18nhash)
+      @labels = load_yaml(@lang, @script, i18nyaml, i18nhash)
       @labels["language"] = @lang
       @labels["script"] = @script
       @labels.each do |k, _v|
