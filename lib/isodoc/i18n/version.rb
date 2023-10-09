@@ -1,5 +1,5 @@
 module IsoDoc
   class I18n
-    VERSION = "1.1.10".freeze
+    VERSION = "1.2.0".freeze
   end
 end
