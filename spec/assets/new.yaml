@@ -5,7 +5,37 @@ arr:
   - arr1
   - arr2
 text: "&#x74;ext2"
+hash_liquid:
+  key1: A {{ var1 }} B
+text_liquid: C {{var2}} D {{var3}} E
+man_liquid: "{{ 'Man' | inflect: 'case:acc' }}"
+women_liquid: "{{ 'Woman' | inflect: 'number:pl, case:gen' }}"
+woman_liquid: "{{ labels['woman'] | inflect: 'case:gen' }}"
+woman2_liquid: "{{ labels['woman'] | inflect: 'case:abl' }}"
+ordinal_num_blank_blank: "{{ var1 | ordinal_num: '', '' }}"
+ordinal_word_blank_blank: "{{ var1 | ordinal_word: '', '' }}"
+ordinal_num_man_blank: "{{ var1 | ordinal_num: 'man', '' }}"
+ordinal_word_man_blank: "{{ var1 | ordinal_word: 'man', '' }}"
+ordinal_num_woman_blank: "{{ var1 | ordinal_num: 'woman', '' }}"
+ordinal_word_woman_blank: "{{ var1 | ordinal_word: 'woman', '' }}"
+ordinal_num_blank_nsg: "{{ var1 | ordinal_num: '', 'gender:f,number:pl' }}"
+ordinal_word_blank_nsg: "{{ var1 | ordinal_word: '', 'gender:f,number:pl' }}"
+ordinal_num_masc_pl: "{{ var1 | ordinal_num: 'man', 'number:pl' }}"
+ordinal_word_masc_pl: "{{ var1 | ordinal_word: 'man', 'number:pl' }}"
 multiple_and: "%1與%2"
+ordinal_keys: [gender,number]
+SpelloutRules:
+  m.sg: spellout-ordinal-masculine
+  f.sg: spellout-ordinal-feminine
+  m.pl: spellout-ordinal-masculine-plural
+  f.pl: spellout-ordinal-feminine-plural
+OrdinalRules:
+  m.sg: digits-ordinal-masculine
+  f.sg: digits-ordinal-feminine
+  m.pl: digits-ordinal-masculine-plural
+  f.pl: digits-ordinal-feminine-plural
+woman: Woman
+man: Man
 inflection:
   Fred:
     sg: Fred
@@ -13,6 +43,8 @@ inflection:
   Man:
     dat: viri
     acc: virem
+    grammar:
+      gender: m
   Woman:
     sg:
       nom: mulier
@@ -20,25 +52,27 @@ inflection:
     pl:
       nom: mulieres
       gen: mulierum
+    grammar:
+      gender: f
   Good:
     sg:
       nom:
-        masc: bonus
-        fem: bona
-        neut: bonum
+        m: bonus
+        f: bona
+        n: bonum
       gen:
-        masc: boni
-        fem: bonae
-        neut: boni
+        m: boni
+        f: bonae
+        n: boni
     pl:
       nom:
-        masc: boni
-        fem: bonae
-        neut: bona
+        m: boni
+        f: bonae
+        n: bona
       gen:
-        masc: bonorum
-        fem: bonarum
-        neut: bonorum
+        m: bonorum
+        f: bonarum
+        n: bonorum
   Walk:
     act:
       ind:

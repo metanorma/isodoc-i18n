@@ -9,4 +9,5 @@ SpelloutRules:
 edition: Auflage
 inflection:
   Auflage:
-    gender: f
+    grammar:
+      gender: f

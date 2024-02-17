@@ -3,5 +3,6 @@ SpelloutRules: spellout-ordinal
 edition: Auflage
 inflection:
   Auflage:
-    gender: f
+    grammar:
+      gender: f
 

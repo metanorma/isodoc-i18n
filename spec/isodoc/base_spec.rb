@@ -138,7 +138,7 @@ RSpec.describe IsoDoc::I18n do
 
   it "does German ordinals" do
     c = IsoDoc::I18n.new("de", "Latn", i18nyaml: "spec/assets/de.yaml")
-    term = c.inflection[c.edition]
+    term = c.inflection[c.edition]["grammar"]
     expect(c.inflect_ordinal(5, term, "SpelloutRules"))
       .to eq "fünfte"
   end
@@ -173,7 +173,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.inflect("Man", number: "pl", case: "acc")).to eq "virem"
     expect(c.inflect("Woman", number: "pl", case: "gen")).to eq "mulierum"
     expect(c.inflect("Good", number: "pl", case: "gen")).to eq "bonorum"
-    expect(c.inflect("Good", number: "pl", case: "gen", gender: "fem"))
+    expect(c.inflect("Good", number: "pl", case: "gen", gender: "f"))
       .to eq "bonarum"
     expect(c.inflect("Walk", person: "2nd")).to eq "ambulas"
     expect(c.inflect("Walk", person: "2nd", number: "pl", mood: "subj"))
@@ -213,15 +213,81 @@ RSpec.describe IsoDoc::I18n do
     expect(c.date("2011-02-03", "%F")).to eq "2011-02-03"
     expect(c.date("2011-02-03", "%-m%_%Y")).to eq "2 2011"
     expect(c.date("2011-02-03T09:04:05", "%F%_%T")).to eq "2011-02-03 09:04:05"
-    expect(c.date("2011-02-03T09:04:05", "%F%_%l%_%p")).to eq "2011-02-03  9 R.N."
-    expect(c.date("2011-02-03T21:04:05", "%F%_%l%_%p")).to eq "2011-02-03  9 I.N."
-    expect(c.date("2011-02-03T09:04:05", "%F%_%l%_%P")).to eq "2011-02-03  9 r.n."
-    expect(c.date("2011-02-03T21:04:05", "%F%_%l%_%P")).to eq "2011-02-03  9 i.n."
+    expect(c.date("2011-02-03T09:04:05",
+                  "%F%_%l%_%p")).to eq "2011-02-03  9 R.N."
+    expect(c.date("2011-02-03T21:04:05",
+                  "%F%_%l%_%p")).to eq "2011-02-03  9 I.N."
+    expect(c.date("2011-02-03T09:04:05",
+                  "%F%_%l%_%P")).to eq "2011-02-03  9 r.n."
+    expect(c.date("2011-02-03T21:04:05",
+                  "%F%_%l%_%P")).to eq "2011-02-03  9 i.n."
     expect(c.date("2011-02-03", "%A%_%B")).to eq "Déardaoin Feabhra"
     expect(c.date("2011-02-03", "%^A%_%^B")).to eq "DÉARDAOIN FEABHRA"
     expect(c.date("2011-02-03", "%a%_%b")).to eq "Déar Feabh"
     expect(c.date("2011-02-03", "%^a%_%^b")).to eq "DÉAR FEABH"
     expect(c.date("2011-02-03", "%a%_%h")).to eq "Déar Feabh"
     expect(c.date("2011-02-03", "%^a%_%^h")).to eq "DÉAR FEABH"
+  end
+
+  it "populates variables through Liquid" do
+    c = IsoDoc::I18n.new("en", "Latn", i18nyaml: "spec/assets/new.yaml")
+    expect(c.populate("text_liquid", { "var2" => "44", "var3" => "55" }))
+      .to eq "C 44 D 55 E"
+    expect(c.populate("text_liquid", { "var1" => "33" }))
+      .to eq "C  D  E"
+    expect(c.populate(["hash_liquid", "key1"], { "var1" => "33" }))
+      .to eq "A 33 B"
+    expect(c.populate(["hash_liquid", "key1"], { "var2" => "44" }))
+      .to eq "A  B"
+  end
+
+  it "uses Liquid inflect filter" do
+    c = IsoDoc::I18n.new("en", "Latn", i18nyaml: "spec/assets/new.yaml")
+    # man_liquid: "{{ 'Man' | inflect: 'case:acc' }}"
+    # women_liquid: "{{ 'Woman' | inflect: 'number:pl, case:gen' }}"
+    # woman_liquid: "{{ labels['woman'] | inflect: 'case:gen' }}"
+    # woman2_liquid: "{{ labels['woman'] | inflect: 'case:abl' }}"
+    expect(c.populate("man_liquid"))
+      .to eq "virem"
+    expect(c.populate("women_liquid"))
+      .to eq "mulierum"
+    expect(c.populate("woman_liquid"))
+      .to eq "mulieris"
+    expect(c.populate("woman2_liquid"))
+      .to eq "Woman"
+  end
+
+  it "uses Liquid ordinal filters" do
+    c = IsoDoc::I18n.new("fr", "Latn", i18nyaml: "spec/assets/new.yaml")
+    # ordinal_num_blank_blank: "{{ var1 | ordinal_num: '', '' }}"
+    # ordinal_word_blank_blank: "{{ var1 | ordinal_word: '', '' }}"
+    # ordinal_num_man_blank: "{{ var1 | ordinal_num: 'man', '' }}"
+    # ordinal_word_man_blank: "{{ var1 | ordinal_word: 'man', '' }}"
+    # ordinal_num_woman_blank: "{{ var1 | ordinal_num: 'woman', '' }}"
+    # ordinal_word_woman_blank: "{{ var1 | ordinal_word: 'woman', '' }}"
+    # ordinal_num_blank_nsg: "{{ var1 | ordinal_num: '', 'gender:f,number:pl' }}"
+    # ordinal_word_blank_nsg: "{{ var1 | ordinal_word: '', 'gender:f,number:pl' }}"
+    # ordinal_num_masc_pl: "{{ var1 | ordinal_num: 'man', 'number:pl' }}"
+    # ordinal_word_masc_pl: "{{ var1 | ordinal_word: 'man', 'number:pl' }}"
+    expect(c.populate("ordinal_num_blank_blank", { "var1" => 31 }))
+      .to eq "31e"
+    expect(c.populate("ordinal_word_blank_blank", { "var1" => 31 }))
+      .to eq "trente-et-unième"
+    expect(c.populate("ordinal_num_man_blank", { "var1" => 1 }))
+      .to eq "1er"
+    expect(c.populate("ordinal_word_man_blank", { "var1" => 1 }))
+      .to eq "premier"
+    expect(c.populate("ordinal_num_woman_blank", { "var1" => 1 }))
+      .to eq "1re"
+    expect(c.populate("ordinal_word_woman_blank", { "var1" => 1 }))
+      .to eq "première"
+    expect(c.populate("ordinal_num_blank_nsg", { "var1" => 31 }))
+      .to eq "31es"
+    expect(c.populate("ordinal_word_blank_nsg", { "var1" => 31 }))
+      .to eq "trente-et-unièmes"
+    expect(c.populate("ordinal_num_masc_pl", { "var1" => 1 }))
+      .to eq "1ers"
+    expect(c.populate("ordinal_word_masc_pl", { "var1" => 1 }))
+      .to eq "premiers"
   end
 end
