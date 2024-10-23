@@ -5,9 +5,8 @@ module IsoDoc
     end
 
     # function localising spaces and punctuation.
-    # Not clear if period needs to be localised for zh
     def l10n(text, lang = @lang, script = @script, locale = @locale)
-      lang == "zh" and text = l10n_zh(text, script)
+      %w(zh ja ko).include?(lang) and text = l10n_zh(text, script)
       lang == "fr" && text = l10n_fr(text, locale || "FR")
       bidiwrap(text, lang, script)
     end
@@ -30,11 +29,11 @@ module IsoDoc
          .default_script(@lang))]
     end
 
+    # CJK
     def l10n_zh(text, script = "Hans")
       xml = Nokogiri::XML::DocumentFragment.parse(text)
       xml.traverse do |n|
-        next unless n.text?
-
+        n.text? or next
         n.replace(l10_zh1(cleanup_entities(n.text, is_xml: false), script))
       end
       xml.to_xml(encoding: "UTF-8").gsub(/<b>/, "").gsub("</b>", "")
@@ -59,12 +58,17 @@ module IsoDoc
       l10n_zh_remove_space(l10n_zh_punct(text))
     end
 
+    # CJK punct if (^|CJK).($|CJK)
     def l10n_zh_punct(text)
-      [":：", ",，", ".．", ")）", "]］", ":：", ";；", "?？", "!！", "–～"].each do |m|
-        text = text.gsub(/#{Regexp.quote m[0]}/, m[1])
-      end
-      ["(（", "[［"].each do |m|
-        text = text.gsub(/#{Regexp.quote m[0]}/, m[1])
+      [":：", ",，", ".．", ")）", "]］", ";；", "?？", "!！", "–～", "(（",
+       "[［"].each do |m|
+        text = text.gsub(/(?<=#{ZH_CHAR}|^) # CJK character, or start of string
+    (\s*)                  # Latin spaces optional
+    #{Regexp.quote(m[0])}  # Latin punctuation we want to convert to CJK
+    (?=   \s*              # followed (lookahead) by ignorable Latin spaces
+      [:,.()\[\];?!-]*     # Latin punctuation which we will also convert to CJK
+      (#{ZH_CHAR}|$)       # CJK character, or end of string
+    ) /x, "\\1#{m[1]}")
       end
       text
     end
@@ -102,7 +106,8 @@ module IsoDoc
 
     def interleave_space_cjk?(text)
       text.size == 2 or return
-      ["\u2014\u2014", "\u2025\u2025", "\u2026\u2026", "\u22ef\u22ef"].include?(text) ||
+      ["\u2014\u2014", "\u2025\u2025", "\u2026\u2026",
+       "\u22ef\u22ef"].include?(text) ||
         /\d\d|\p{Latin}\p{Latin}|[[:space:]]/.match?(text) ||
         /^[\u2018\u201c(\u3014\[{\u3008\u300a\u300c\u300e\u3010\u2985\u3018\u3016\u00ab\u301d]/.match?(text) ||
         /[\u2019\u201d)\u3015\]}\u3009\u300b\u300d\u300f\u3011\u2986\u3019\u3017\u00bb\u301f]$/.match?(text) ||
