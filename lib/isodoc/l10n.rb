@@ -55,13 +55,12 @@ module IsoDoc
 
     # note: we can't differentiate comma from enumeration comma 、
     def l10_zh1(text, _script)
-      l10n_zh_remove_space(l10n_zh_punct(text))
+      l10n_zh_dash(l10n_zh_remove_space(l10n_zh_punct(text)))
     end
 
     # CJK punct if (^|CJK).($|CJK)
     def l10n_zh_punct(text)
-      [":：", ",，", ".．", ")）", "]］", ";；", "?？", "!！", "–～", "(（",
-       "[［"].each do |m|
+      [":：", ",，", ".．", ")）", "]］", ";；", "?？", "!！", "(（", "[［"].each do |m|
         text = text.gsub(/(?<=#{ZH_CHAR}|^) # CJK character, or start of string
     (\s*)                  # Latin spaces optional
     #{Regexp.quote(m[0])}  # Latin punctuation we want to convert to CJK
@@ -71,6 +70,15 @@ module IsoDoc
     ) /x, "\\1#{m[1]}")
       end
       text
+    end
+
+    def l10n_zh_dash(text)
+      text.gsub(/(?<=#{ZH_CHAR}|^) # CJK character, or start of string
+                (\d*)              # optional digits
+                –                  # en-dash
+                (\d*)              # optional digits
+                (#{ZH_CHAR}|$)     # CJK character, or end of string
+                /xo, "\\1～\\2\\3")
     end
 
     def l10n_zh_remove_space(text)
