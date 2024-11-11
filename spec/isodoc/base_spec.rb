@@ -33,8 +33,8 @@ RSpec.describe IsoDoc::I18n do
     c = IsoDoc::I18n.new("en", "Latn", i18nyaml: "spec/assets/new.yaml")
     expect(c.text).to eq "text2"
     expect(c.at).to eq "at"
-    expect(c.hash.to_s).to be_equivalent_to '{"key1"=>"val1", "key2"=>"val2"}'
-    expect(c.arr.to_s).to eq '["arr1", "arr2"]'
+    expect(c.hash).to be_equivalent_to({"key1"=>"val1", "key2"=>"val2"})
+    expect(c.arr).to eq(["arr1", "arr2"])
   end
 
   it "loads language hash overrides" do
@@ -42,8 +42,8 @@ RSpec.describe IsoDoc::I18n do
                          i18nhash: YAML.load_file("spec/assets/new.yaml"))
     expect(c.text).to eq "text2"
     expect(c.at).to eq "at"
-    expect(c.hash.to_s).to be_equivalent_to '{"key1"=>"val1", "key2"=>"val2"}'
-    expect(c.arr.to_s).to eq '["arr1", "arr2"]'
+    expect(c.hash).to be_equivalent_to({"key1"=>"val1", "key2"=>"val2"})
+    expect(c.arr).to eq ["arr1", "arr2"]
   end
 
   it "does English localisation" do

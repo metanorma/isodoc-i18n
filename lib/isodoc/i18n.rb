@@ -6,6 +6,7 @@ require_relative "l10n"
 require_relative "liquid/liquid"
 require "liquid"
 require_relative "i18n/version"
+require "base64"
 
 module IsoDoc
   class I18n
