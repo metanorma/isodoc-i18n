@@ -32,20 +32,32 @@ module IsoDoc
     # CJK
     def l10n_zh(text, script = "Hans")
       xml = Nokogiri::XML::DocumentFragment.parse(text)
-      xml.traverse do |n|
-        n.text? or next
-        n.replace(l10_zh1(cleanup_entities(n.text, is_xml: false), script))
+      t = xml.xpath(".//text()")
+      t.each_with_index do |n, i|
+        prev, foll = l10n_context(t, i)
+        text = cleanup_entities(n.text, is_xml: false)
+        n.replace(l10_zh1(text, prev, foll, script))
       end
       xml.to_xml(encoding: "UTF-8").gsub(/<b>/, "").gsub("</b>", "")
         .gsub(/<\?[^>]+>/, "")
     end
 
+    # previous, following context of current text node:
+    # do not use just the immediately adjoining text tokens for context
+    # deal with spaces and empty text by just concatenating entire context
+    def l10n_context(nodes, idx)
+      prev = nodes[0...idx].map(&:text).join
+      foll = nodes[(idx + 1)...(nodes.size)].map(&:text).join
+      [prev, foll]
+    end
+
     def l10n_fr(text, locale)
       xml = Nokogiri::XML::DocumentFragment.parse(text)
-      xml.traverse do |n|
-        next unless n.text?
-
-        n.replace(l10n_fr1(cleanup_entities(n.text, is_xml: false), locale))
+      t = xml.xpath(".//text()")
+      t.each_with_index do |n, i|
+        prev, foll = l10n_context(t, i)
+        text = cleanup_entities(n.text, is_xml: false)
+        n.replace(l10n_fr1(text, prev, foll, locale))
       end
       xml.to_xml(encoding: "UTF-8")
     end
@@ -54,49 +66,84 @@ module IsoDoc
               "\\p{In Halfwidth And Fullwidth Forms}".freeze
 
     # note: we can't differentiate comma from enumeration comma 、
-    def l10_zh1(text, _script)
-      l10n_zh_dash(l10n_zh_remove_space(l10n_zh_punct(text)))
+    # def l10_zh1(text, _script)
+    def l10_zh1(text, prev, foll, _script)
+      # l10n_zh_dash(l10n_zh_remove_space(l10n_zh_punct(text)))
+      r = l10n_zh_punct(text, prev, foll)
+      r = l10n_zh_remove_space(r, prev, foll)
+      l10n_zh_dash(r, prev, foll)
     end
 
+    ZH1_PUNCT = /(#{ZH_CHAR}|^)   # CJK character, or start of string
+         (\s*)$                   # Latin spaces optional
+    /xo.freeze
+    ZH2_PUNCT = /^\s*             # followed by ignorable Latin spaces
+                [:,.()\[\];?!-]*  # Latin punct which will also convert to CJK
+                (#{ZH_CHAR}|$)    # CJK character, or end of string
+      /xo.freeze
+
     # CJK punct if (^|CJK).($|CJK)
-    def l10n_zh_punct(text)
+    def l10n_zh_punct(text, prev, foll)
       [":：", ",，", ".．", ")）", "]］", ";；", "?？", "!！", "(（", "[［"].each do |m|
-        text = text.gsub(/(?<=#{ZH_CHAR}|^) # CJK character, or start of string
-    (\s*)                  # Latin spaces optional
-    #{Regexp.quote(m[0])}  # Latin punctuation we want to convert to CJK
-    (?=   \s*              # followed (lookahead) by ignorable Latin spaces
-      [:,.()\[\];?!-]*     # Latin punctuation which we will also convert to CJK
-      (#{ZH_CHAR}|$)       # CJK character, or end of string
-    ) /x, "\\1#{m[1]}")
+        text = l10n_gsub(text, prev, foll, [m[0], m[1]],
+                         [ZH1_PUNCT, ZH2_PUNCT])
       end
       text
     end
 
-    def l10n_zh_dash(text)
-      text.gsub(/(?<=#{ZH_CHAR}|^) # CJK character, or start of string
-                (\d*)              # optional digits
-                –                  # en-dash
-                (\d*)              # optional digits
-                (#{ZH_CHAR}|$)     # CJK character, or end of string
-                /xo, "\\1～\\2\\3")
+    ZH1_DASH = /(#{ZH_CHAR}|^)    # CJK character, or start of string
+                (\d*)             # optional digits
+    $/xo.freeze
+
+    ZH2_DASH = /^\d*              # followed by optional digits
+                (#{ZH_CHAR}|$)    # CJK character, or end of string
+      /xo.freeze
+
+    def l10n_zh_dash(text, prev, foll)
+      l10n_gsub(text, prev, foll, %w(– ～), [ZH1_DASH, ZH2_DASH])
     end
 
-    def l10n_zh_remove_space(text)
-      text.gsub(/(?<=#{ZH_CHAR}) (?=#{ZH_CHAR})/o, "")
-        .gsub(/(?<=\d) (?=#{ZH_CHAR})/o, "")
-        .gsub(/(?<=#{ZH_CHAR}) (?=\d)/o, "")
-        .gsub(/(?<=#{ZH_CHAR}) (?=[A-Za-z](#{ZH_CHAR}|$))/o, "")
+    def l10n_gsub(text, prev, foll, delim, regex)
+      context = l10n_gsub_context(text, prev, foll, delim) or return text
+      (1...(context.size - 1)).each do |i|
+        l10_context_valid?(context, i, delim, regex) and
+          context[i] = delim[1].gsub("\\0", context[i]) # Full-width equivalent
+      end
+      context[1...(context.size - 1)].join
     end
 
-    def l10n_fr1(text, locale)
-      text = text.gsub(/(?<=\p{Alnum})([»›;?!])(?=\s)/, "\u202f\\1")
-      text = text.gsub(/(?<=\p{Alnum})([»›;?!])$/, "\u202f\\1")
-      text = text.gsub(/^([»›;?!])/, "\u202f\\1")
-      text = text.gsub(/([«‹])/, "\\1\u202f")
+    def l10n_gsub_context(text, prev, foll, delim)
+      d = delim[0].is_a?(Regexp) ? delim[0] : Regexp.quote(delim[0])
+      context = text.split(/(#{d})/) # delim to replace
+      context.size == 1 and return
+      [prev, context, foll].flatten
+    end
+
+    def l10_context_valid?(context, idx, delim, regex)
+      found_delim = if delim[0].is_a?(Regexp) # punct to convert
+                      delim[0].match?(context[idx])
+                    else
+                      context[idx] == delim[0]
+                    end
+      found_delim &&
+        regex[0].match?(context[0...idx].join) && # preceding context
+        regex[1].match?(context[(idx + 1)..-1].join) # foll context
+    end
+
+    def l10n_zh_remove_space(text, prev, foll)
+      text = l10n_gsub(text, prev, foll, [" ", ""],
+                       [/(#{ZH_CHAR}|\d)$/o, /^#{ZH_CHAR}/o])
+      l10n_gsub(text, prev, foll, [" ", ""],
+                [/#{ZH_CHAR}$/o, /^(\d|[A-Za-z](#{ZH_CHAR}|$))/o])
+    end
+
+    def l10n_fr1(text, prev, foll, locale)
+      text = l10n_gsub(text, prev, foll, [/[»›;?!]/, "\u202f\\0"],
+                       [/\p{Alnum}$/, /^(\s|$)/])
+      text = l10n_gsub(text, prev, foll, [/[«‹]/, "\\0\u202f"], [/$/, /^./])
       colonsp = locale == "CH" ? "\u202f" : "\u00a0"
-      text = text.gsub(/(?<=\p{Alnum})(:)(?=\s)/, "#{colonsp}\\1")
-      text = text.gsub(/(?<=\p{Alnum})(:)$/, "#{colonsp}\\1")
-      text.gsub(/^(:\s)/, "#{colonsp}\\1")
+      l10n_gsub(text, prev, foll, [":", "#{colonsp}\\0"],
+                [/\p{Alnum}$/, /^(\s|$)/])
     end
 
     def self.cjk_extend(text)

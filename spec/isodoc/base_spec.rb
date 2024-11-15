@@ -64,6 +64,10 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "<a>计算机代码</a> （你好， 世界．）"
     expect(c.l10n("3–9a, 算3–9"))
       .to be_equivalent_to "3–9a, 算3～9"
+    expect(c.l10n("3<span>)</span>算<span>)</span>3)<span>算)</span>3"))
+      .to be_equivalent_to "3<span>)</span>算<span>)</span>3)<span>算)</span>3"
+    expect(c.l10n("<span>)</span>算<span>)</span>)<span>算)</span>"))
+      .to be_equivalent_to "<span>）</span>算<span>）</span>)<span>算）</span>"
   end
 
   it "does Simplified Chinese localisation" do
@@ -125,6 +129,8 @@ RSpec.describe IsoDoc::I18n do
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#x202f;: code&#x202f;!"
+    expect(c.l10n("<a>Code</a>;<a> </a><a>«</a><a>c</a>ode» and: code!"))
+      .to be_equivalent_to "<a>Code</a> ;<a> </a><a>« </a><a>c</a>ode » and : code !"
     expect(e.encode(c.l10n("http://xyz a;b"), :hexadecimal))
       .to be_equivalent_to "http://xyz a;b"
   end
