@@ -139,9 +139,9 @@ RSpec.describe IsoDoc::I18n do
     c = IsoDoc::I18n.new("en", "Latn")
     expect(c.boolean_conj([], "and")).to eq ""
     expect(c.boolean_conj(%w(a), "and")).to eq "a"
-    expect(c.boolean_conj(%w(a b), "and")).to eq "a and b"
-    expect(c.boolean_conj(%w(a b c), "and")).to eq "a, b, and c"
-    expect(c.boolean_conj(%w(a b c d), "and")).to eq "a, b, c, and d"
+    expect(c.boolean_conj(%w(a b), "and")).to eq "a<conn> and </conn>b"
+    expect(c.boolean_conj(%w(a b c), "and")).to eq "a<enum-comma>, </enum-comma>b<conn>, and </conn>c"
+    expect(c.boolean_conj(%w(a b c d), "and")).to eq "a<enum-comma>, </enum-comma>b<enum-comma>, </enum-comma>c<conn>, and </conn>d"
   end
 
   it "does boolean conjunctions in Traditional Chinese" do
@@ -149,9 +149,9 @@ RSpec.describe IsoDoc::I18n do
                          i18nhash: YAML.load_file("spec/assets/new.yaml"))
     expect(c.boolean_conj([], "and")).to eq ""
     expect(c.boolean_conj(%w(a), "and")).to eq "a"
-    expect(c.boolean_conj(%w(a b), "and")).to eq "a and b"
-    expect(c.boolean_conj(%w(a b c), "and")).to eq "a、b與c"
-    expect(c.boolean_conj(%w(a b c d), "and")).to eq "a、b、c與d"
+    expect(c.boolean_conj(%w(a b), "and")).to eq "a<conn> and </conn>b"
+    expect(c.boolean_conj(%w(a b c), "and")).to eq "a<enum-comma>、</enum-comma>b<conn>與</conn>c"
+    expect(c.boolean_conj(%w(a b c d), "and")).to eq "a<enum-comma>、</enum-comma>b<enum-comma>、</enum-comma>c<conn>與</conn>d"
   end
 
   it "does German ordinals" do

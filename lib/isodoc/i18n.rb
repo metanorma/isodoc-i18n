@@ -63,8 +63,8 @@ module IsoDoc
     end
 
     def enum_comma
-      %w(Hans Hant).include?(@script) and return "、"
-      ", "
+      %w(Hans Hant).include?(@script) and return "<enum-comma>、</enum-comma>"
+      "<enum-comma>, </enum-comma>"
     end
 
     def cleanup_entities(text, is_xml: true)

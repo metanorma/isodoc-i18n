@@ -22,7 +22,7 @@ ordinal_num_blank_nsg: "{{ var1 | ordinal_num: '', 'gender:f,number:pl' }}"
 ordinal_word_blank_nsg: "{{ var1 | ordinal_word: '', 'gender:f,number:pl' }}"
 ordinal_num_masc_pl: "{{ var1 | ordinal_num: 'man', 'number:pl' }}"
 ordinal_word_masc_pl: "{{ var1 | ordinal_word: 'man', 'number:pl' }}"
-multiple_and: "%1與%2"
+multiple_and: "%1<conn>與</conn>%2"
 ordinal_keys: [gender,number]
 SpelloutRules:
   m.sg: spellout-ordinal-masculine
