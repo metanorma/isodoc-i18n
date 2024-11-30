@@ -38,7 +38,7 @@ module IsoDoc
         text = cleanup_entities(n.text, is_xml: false)
         n.replace(l10_zh1(text, prev, foll, script))
       end
-      xml.to_xml(encoding: "UTF-8").gsub(/<b>/, "").gsub("</b>", "")
+      to_xml(xml).gsub(/<b>/, "").gsub("</b>", "")
         .gsub(/<\?[^>]+>/, "")
     end
 
@@ -59,7 +59,7 @@ module IsoDoc
         text = cleanup_entities(n.text, is_xml: false)
         n.replace(l10n_fr1(text, prev, foll, locale))
       end
-      xml.to_xml(encoding: "UTF-8")
+      to_xml(xml)
     end
 
     ZH_CHAR = "(\\p{Han}|\\p{In CJK Symbols And Punctuation}|" \
@@ -168,6 +168,11 @@ module IsoDoc
         /[\u2019\u201d)\u3015\]}\u3009\u300b\u300d\u300f\u3011\u2986\u3019\u3017\u00bb\u301f]$/.match?(text) ||
         /[\u3002.\u3001,\u30fb:;\u2010\u301c\u30a0\u2013!?\u203c\u2047\u2048\u2049]/.match?(text) and return false
       true
+    end
+
+    def to_xml(node)
+      node&.to_xml(encoding: "UTF-8", indent: 0,
+                   save_with: Nokogiri::XML::Node::SaveOptions::AS_XML)
     end
   end
 end
