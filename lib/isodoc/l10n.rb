@@ -62,8 +62,8 @@ module IsoDoc
       xml.to_xml(encoding: "UTF-8")
     end
 
-    ZH_CHAR = "\\p{Han}|\\p{In CJK Symbols And Punctuation}|" \
-              "\\p{In Halfwidth And Fullwidth Forms}".freeze
+    ZH_CHAR = "(\\p{Han}|\\p{In CJK Symbols And Punctuation}|" \
+              "\\p{In Halfwidth And Fullwidth Forms})".freeze
 
     # note: we can't differentiate comma from enumeration comma 、
     # def l10_zh1(text, _script)
