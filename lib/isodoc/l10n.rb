@@ -140,7 +140,7 @@ module IsoDoc
     def l10n_fr1(text, prev, foll, locale)
       text = l10n_gsub(text, prev, foll, [/[»›;?!]/, "\u202f\\0"],
                        [/\p{Alnum}$/, /^(\s|$)/])
-      text = l10n_gsub(text, prev, foll, [/[«‹]/, "\\0\u202f"], [/$/, /^./])
+      text = l10n_gsub(text, prev, foll, [/[«‹]/, "\\0\u202f"], [/$/, /^(?!\p{Zs})./])
       colonsp = locale == "CH" ? "\u202f" : "\u00a0"
       l10n_gsub(text, prev, foll, [":", "#{colonsp}\\0"],
                 [/\p{Alnum}$/, /^(\s|$)/])

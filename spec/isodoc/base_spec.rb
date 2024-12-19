@@ -121,6 +121,9 @@ RSpec.describe IsoDoc::I18n do
     expect(e.encode(c.l10n("Code; &#xab;code&#xbb; and: code!"), :hexadecimal))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"
+    expect(e.encode(c.l10n("Code; « code&#x202f;» and: code !"), :hexadecimal))
+      .to be_equivalent_to "Code&#x202f;; &#xab; code&#x202f;&#xbb; " \
+                           "and&#xa0;: code !"
     c = IsoDoc::I18n.new("fr", "Latn", locale: "FR")
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
