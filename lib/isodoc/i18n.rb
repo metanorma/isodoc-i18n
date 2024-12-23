@@ -25,7 +25,7 @@ module IsoDoc
 
     def liquid_init
       ::IsoDoc::I18n::Liquid.set(self)
-      ::Liquid::Template.register_filter(::IsoDoc::I18n::Liquid)
+      ::Liquid::Environment.default.register_filter(::IsoDoc::I18n::Liquid)
     end
 
     def calendar_data
