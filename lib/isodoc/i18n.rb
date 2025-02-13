@@ -21,6 +21,7 @@ module IsoDoc
       @c = HTMLEntities.new
       init_labels(i18nyaml, i18nhash)
       liquid_init
+      self
     end
 
     def liquid_init
@@ -39,6 +40,8 @@ module IsoDoc
       @labels["language"] = @lang
       @labels["script"] = @script
       @labels.each_key do |k|
+        methods.include?(k.downcase.to_sym) ||
+          self.class.methods.include?(k.downcase.to_sym) and next
         self.class.send(:define_method, k.downcase) { get[k] }
       end
     end

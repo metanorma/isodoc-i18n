@@ -1,10 +1,11 @@
-hash:
+hashx:
   key1: val1
   key2: val2
-arr: 
+arrx: 
   - arr1
   - arr2
 text: "&#x74;ext2"
+get: "ABC"
 hash_liquid:
   key1: A {{ var1 }} B
 text_liquid: C {{var2}} D {{var3}} E
