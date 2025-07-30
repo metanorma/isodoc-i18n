@@ -6,7 +6,7 @@ end
 require "bundler/setup"
 require "isodoc-i18n"
 require "rspec/matchers"
-require  "xml-c14n"
+require  "canon"
 require "equivalent-xml"
 
 RSpec.configure do |config|
