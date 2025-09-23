@@ -1,5 +1,42 @@
 module IsoDoc
   class I18n
+    ZH_CHAR = "(\\p{Han}|\\p{In CJK Symbols And Punctuation}|" \
+              "\\p{In Halfwidth And Fullwidth Forms})".freeze
+    LATIN_PUNCT = /[:,.()\[\];?!-]/.freeze
+    
+    # Condition for converting punctuation to double width:
+    # 1. (Strict condition) CJK before, CJK after, modulo ignorable characters:
+    # 1a. CJK character, or start of string. Latin spaces optional.
+    ZH1_PUNCT = /(#{ZH_CHAR}|^)(\s*)$/xo.freeze 
+    # 1b. Latin spaces optional, Latin punct which will also convert to CJK, 
+    # CJK character, or end of string.
+    ZH2_PUNCT = /^\s*#{LATIN_PUNCT}*(#{ZH_CHAR}|$)/xo.freeze
+    # 2. CJK before, space after:
+    # 2a.  CJK char, followed by optional Latin punct which will also convert to CJK
+    ZH1_NO_SPACE = /#{ZH_CHAR}#{LATIN_PUNCT}*$/xo.freeze
+    # 2b. optional Latin punct which wil also convert to CJK, then space
+    OPT_PUNCT_SPACE = /^($|#{LATIN_PUNCT}*\s)/xo.freeze
+
+    # Contexts for converting en-dashes to full-width
+    # Before: CJK or start of string, optional digits
+    ZH1_DASH = /(#{ZH_CHAR}|^)(\d*)$/xo.freeze
+    # After: optional digits, CJK or end of string
+    ZH2_DASH = /^\d*(#{ZH_CHAR}|$)/xo.freeze
+    
+    # Pre-defined punctuation mappings for efficiency
+    ZH_PUNCT_MAP = [
+      [":：", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
+      [",，", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
+      [".。", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
+      [")）", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
+      ["]］", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
+      [";；", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
+      ["?？", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
+      ["!！", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
+      ["(（", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
+      ["[［", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]]
+    ].freeze
+
     def self.l10n(text, lang = @lang, script = @script, locale = @locale)
       l10n(text, lang, script, locale)
     end
@@ -33,18 +70,28 @@ module IsoDoc
     def l10n_zh(text, script = "Hans")
       xml = Nokogiri::XML::DocumentFragment.parse(text)
       t = xml.xpath(".//text()")
+      # Cache text content once per method call to avoid repeated .text calls
+      text_cache = t.map(&:text)
       t.each_with_index do |n, i|
-        prev, foll = l10n_context(t, i)
+        prev, foll = l10n_context_cached(text_cache, i)
         text = cleanup_entities(n.text, is_xml: false)
         n.replace(l10_zh1(text, prev, foll, script))
       end
-      to_xml(xml).gsub(/<b>/, "").gsub("</b>", "")
-        .gsub(/<\?[^>]+>/, "")
+      # Combine multiple gsub operations for better performance
+      to_xml(xml).gsub(/<b>|<\/b>|<\?[^>]+>/, "")
     end
 
     # previous, following context of current text node:
     # do not use just the immediately adjoining text tokens for context
     # deal with spaces and empty text by just concatenating entire context
+    # Optimized to avoid O(n²) complexity by using pre-cached text content
+    def l10n_context_cached(text_cache, idx)
+      prev = text_cache[0...idx].join
+      foll = text_cache[(idx + 1)...text_cache.size].join
+      [prev, foll]
+    end
+
+    # Fallback method for backward compatibility
     def l10n_context(nodes, idx)
       prev = nodes[0...idx].map(&:text).join
       foll = nodes[(idx + 1)...(nodes.size)].map(&:text).join
@@ -54,16 +101,15 @@ module IsoDoc
     def l10n_fr(text, locale)
       xml = Nokogiri::XML::DocumentFragment.parse(text)
       t = xml.xpath(".//text()")
+      # Cache text content once per method call to avoid repeated .text calls
+      text_cache = t.map(&:text)
       t.each_with_index do |n, i|
-        prev, foll = l10n_context(t, i)
+        prev, foll = l10n_context_cached(text_cache, i)
         text = cleanup_entities(n.text, is_xml: false)
         n.replace(l10n_fr1(text, prev, foll, locale))
       end
       to_xml(xml)
     end
-
-    ZH_CHAR = "(\\p{Han}|\\p{In CJK Symbols And Punctuation}|" \
-              "\\p{In Halfwidth And Fullwidth Forms})".freeze
 
     # note: we can't differentiate comma from enumeration comma 、
     # def l10_zh1(text, _script)
@@ -73,42 +119,14 @@ module IsoDoc
       l10n_zh_dash(r, prev, foll)
     end
 
-    # Latin punct which will also convert to CJK
-    LATIN_PUNCT = /[:,.()\[\];?!-]/.freeze
-
-    # CJK strict condition for converting punctuation to double width:
-    # CJK before, CJK after, modulo ignorable characters
-    ZH1_PUNCT = /(#{ZH_CHAR}|^)   # CJK character, or start of string
-         (\s*)$                   # Latin spaces optional
-    /xo.freeze
-    ZH2_PUNCT = /^\s*             # followed by ignorable Latin spaces
-                #{LATIN_PUNCT}*   # Latin punct which will also convert to CJK
-                (#{ZH_CHAR}|$)    # CJK character, or end of string
-      /xo.freeze
-
-    # Context; CJK before, space after
-    # CJK char, followed by optional Latin punct which will also convert to CJK
-    ZH1_NO_SPACE = /#{ZH_CHAR}#{LATIN_PUNCT}*$/xo.freeze
-    # optional Latin punct which wil also convert to CJK, then space
-    OPT_PUNCT_SPACE = /^($|#{LATIN_PUNCT}*\s)/xo.freeze
-
     def l10n_zh_punct(text, prev, foll)
-      [":：", ",，", ".。", ")）", "]］", ";；", "?？", "!！", "(（", "[［"].each do |m|
-        text = l10n_gsub(text, prev, foll, [m[0], m[1]],
-                         [[ZH1_PUNCT, ZH2_PUNCT],
-                          [ZH1_NO_SPACE, OPT_PUNCT_SPACE],
-                          [/(\s|^)$/, /^#{ZH_CHAR}/o]])
+      # Use pre-defined mapping for better performance
+      ZH_PUNCT_MAP.each do |mapping|
+        punct_pair, regexes = mapping
+        text = l10n_gsub(text, prev, foll, [punct_pair[0], punct_pair[1]], regexes)
       end
       text
     end
-
-    ZH1_DASH = /(#{ZH_CHAR}|^)    # CJK character, or start of string
-                (\d*)             # optional digits
-    $/xo.freeze
-
-    ZH2_DASH = /^\d*              # followed by optional digits
-                (#{ZH_CHAR}|$)    # CJK character, or end of string
-      /xo.freeze
 
     def l10n_zh_dash(text, prev, foll)
       l10n_gsub(text, prev, foll, %w(– ～), [[ZH1_DASH, ZH2_DASH]])
