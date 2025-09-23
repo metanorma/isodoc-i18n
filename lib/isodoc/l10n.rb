@@ -1,7 +1,10 @@
+require "metanorma-utils"
+
 module IsoDoc
   class I18n
-    ZH_CHAR = "(\\p{Han}|\\p{In CJK Symbols And Punctuation}|" \
-              "\\p{In Halfwidth And Fullwidth Forms})".freeze
+    # Use comprehensive CJK definition from metanorma-utils
+    # This includes Han, Katakana, Hiragana, Hangul, Bopomofo and all CJK extensions
+    ZH_CHAR = "(#{Metanorma::Utils::CJK})".freeze
     LATIN_PUNCT = /[:,.()\[\];?!-]/.freeze
     
     # Condition for converting punctuation to double width:
