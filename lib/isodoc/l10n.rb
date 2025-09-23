@@ -40,14 +40,16 @@ module IsoDoc
       ["[［", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]]
     ].freeze
 
-    def self.l10n(text, lang = @lang, script = @script, locale = @locale)
-      l10n(text, lang, script, locale)
+    def self.l10n(text, lang = @lang, script = @script, options = {})
+      l10n(text, lang, script, options)
     end
 
-    # function localising spaces and punctuation.
-    def l10n(text, lang = @lang, script = @script, locale = @locale)
-      %w(zh ja ko).include?(lang) and text = l10n_zh(text, script)
-      lang == "fr" && text = l10n_fr(text, locale || "FR")
+    # function localising spaces and punctuation
+    # options[:prev] and options[:foll] are optional context strings
+    def l10n(text, lang = @lang, script = @script, options = {})
+      locale = options[:locale] || @locale
+      %w(zh ja ko).include?(lang) and text = l10n_zh(text, script, options[:prev], options[:foll])
+      lang == "fr" && text = l10n_fr(text, locale || "FR", options[:prev], options[:foll])
       bidiwrap(text, lang, script)
     end
 
@@ -70,18 +72,32 @@ module IsoDoc
     end
 
     # CJK
-    def l10n_zh(text, script = "Hans")
-      xml = Nokogiri::XML::DocumentFragment.parse(text)
-      t = xml.xpath(".//text()")
-      # Cache text content once per method call to avoid repeated .text calls
-      text_cache = t.map(&:text)
+    def l10n_zh(text, script, prev, foll)
+      script ||= "Hans"
+      t, text_cache, xml = l10n_prep(text, prev, foll)
       t.each_with_index do |n, i|
-        prev, foll = l10n_context_cached(text_cache, i)
+        # Adjust index if prev context prepended
+        prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
         text = cleanup_entities(n.text, is_xml: false)
-        n.replace(l10_zh1(text, prev, foll, script))
+        n.replace(l10_zh1(text, prev_ctx, foll_ctx, script))
       end
-      # Combine multiple gsub operations for better performance
       to_xml(xml).gsub(/<b>|<\/b>|<\?[^>]+>/, "")
+    end
+
+    def l10n_prep(text, prev, foll)
+            xml = Nokogiri::XML::DocumentFragment.parse(text)
+      t = xml.xpath(".//text()")
+      text_cache = build_text_cache(t, prev, foll)
+      [t, text_cache, xml]
+    end
+
+    # Cache text content once per method call to avoid repeated .text calls
+    # Build text cache with optional prepended/appended context
+    def build_text_cache(text_nodes, prev_context = nil, foll_context = nil)
+      text_cache = text_nodes.map(&:text)
+      text_cache.unshift(prev_context) if prev_context
+      text_cache.push(foll_context) if foll_context
+      text_cache
     end
 
     # previous, following context of current text node:
@@ -101,15 +117,12 @@ module IsoDoc
       [prev, foll]
     end
 
-    def l10n_fr(text, locale)
-      xml = Nokogiri::XML::DocumentFragment.parse(text)
-      t = xml.xpath(".//text()")
-      # Cache text content once per method call to avoid repeated .text calls
-      text_cache = t.map(&:text)
+    def l10n_fr(text, locale, prev, foll)
+      t, text_cache, xml = l10n_prep(text, prev, foll)
       t.each_with_index do |n, i|
-        prev, foll = l10n_context_cached(text_cache, i)
+        prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
         text = cleanup_entities(n.text, is_xml: false)
-        n.replace(l10n_fr1(text, prev, foll, locale))
+        n.replace(l10n_fr1(text, prev_ctx, foll_ctx, locale))
       end
       to_xml(xml)
     end

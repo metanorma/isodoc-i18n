@@ -158,6 +158,20 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "http://xyz a;b"
   end
 
+  it "does French localisation with options hash" do
+    e = HTMLEntities.new
+    c = IsoDoc::I18n.new("fr", "Latn")
+    # Test that passing locale in options hash works the same as setting it in constructor
+    expect(e.encode(c.l10n("Code; «code» and: code!", "fr", "Latn", { locale: "CH" }), :hexadecimal))
+      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
+                           "and&#x202f;: code&#x202f;!"
+    # Compare with constructor-set locale
+    c_ch = IsoDoc::I18n.new("fr", "Latn", locale: "CH")
+    expect(e.encode(c_ch.l10n("Code; «code» and: code!"), :hexadecimal))
+      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
+                           "and&#x202f;: code&#x202f;!"
+  end
+
   it "does boolean conjunctions in English" do
     c = IsoDoc::I18n.new("en", "Latn")
     expect(c.boolean_conj([], "and")).to eq ""
@@ -234,6 +248,32 @@ RSpec.describe IsoDoc::I18n do
     expect(c.cjk_extend("解題29")).to eq "解　題　29"
     expect(c.cjk_extend("(解(題)解題)")).to eq "(解　(題)　解　題)"
     expect(c.cjk_extend("解!題")).to eq "解!題"
+  end
+
+  it "uses prev and foll context parameters" do
+    c = IsoDoc::I18n.new("zh", "Hans")
+    
+    # Test that context parameters are properly extracted and used
+    # The comma should be converted when surrounded by CJK context
+    expect(c.l10n(",", "zh", "Hans", { prev: "计算机代码", foll: "计算机代码" }))
+      .to eq "，"
+    
+    # Test with only prev context
+    expect(c.l10n(",", "zh", "Hans", { prev: "计算机代码" }))
+      .to eq "，"
+    
+    # Test with only foll context  
+    expect(c.l10n(",", "zh", "Hans", { foll: "计算机代码" }))
+      .to eq "，"
+    
+    # Test without context using English - should not convert
+    c_en = IsoDoc::I18n.new("en", "Latn")
+    expect(c_en.l10n(",")).to eq ","
+      
+    # Test French with context parameters (should still work)
+    c_fr = IsoDoc::I18n.new("fr", "Latn")
+    result = c_fr.l10n(":", "fr", "Latn", { prev: "Code", foll: "end" })
+    expect(result).to include(":")  # Should still apply French spacing rules
   end
 
   it "parses dates" do
