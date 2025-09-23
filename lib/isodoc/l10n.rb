@@ -68,7 +68,6 @@ module IsoDoc
     # note: we can't differentiate comma from enumeration comma 、
     # def l10_zh1(text, _script)
     def l10_zh1(text, prev, foll, _script)
-      # l10n_zh_dash(l10n_zh_remove_space(l10n_zh_punct(text)))
       r = l10n_zh_punct(text, prev, foll)
       r = l10n_zh_remove_space(r, prev, foll)
       l10n_zh_dash(r, prev, foll)
@@ -84,7 +83,7 @@ module IsoDoc
 
     # CJK punct if (^|CJK).($|CJK)
     def l10n_zh_punct(text, prev, foll)
-      [":：", ",，", ".．", ")）", "]］", ";；", "?？", "!！", "(（", "[［"].each do |m|
+      [":：", ",，", ".。", ")）", "]］", ";；", "?？", "!！", "(（", "[［"].each do |m|
         text = l10n_gsub(text, prev, foll, [m[0], m[1]],
                          [ZH1_PUNCT, ZH2_PUNCT])
       end

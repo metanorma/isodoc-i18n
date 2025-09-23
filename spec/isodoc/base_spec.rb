@@ -63,9 +63,9 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("Code (hello, world.)"))
       .to be_equivalent_to "Code (hello, world.)"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
-      .to be_equivalent_to " 计算机代码（你好，世界．）"
+      .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界．）"
+      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
     expect(c.l10n("3–9a, 算3–9"))
       .to be_equivalent_to "3–9a, 算3～9"
     expect(c.l10n("3<span>)</span>算<span>)</span>3)<span>算)</span>3"))
@@ -79,9 +79,9 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("Code (hello, world.)"))
       .to be_equivalent_to "Code (hello, world.)"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
-      .to be_equivalent_to " 计算机代码（你好，世界．）"
+      .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界．）"
+      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
   end
 
   it "does Japanese localisation" do
@@ -89,9 +89,9 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("Code (hello, world.)"))
       .to be_equivalent_to "Code (hello, world.)"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
-      .to be_equivalent_to " 计算机代码（你好，世界．）"
+      .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界．）"
+      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
   end
 
   it "does Hebrew RTL localisation" do
