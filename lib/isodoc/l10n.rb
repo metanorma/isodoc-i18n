@@ -73,19 +73,31 @@ module IsoDoc
       l10n_zh_dash(r, prev, foll)
     end
 
+    # Latin punct which will also convert to CJK
+    LATIN_PUNCT = /[:,.()\[\];?!-]/.freeze
+
+    # CJK strict condition for converting punctuation to double width:
+    # CJK before, CJK after, modulo ignorable characters
     ZH1_PUNCT = /(#{ZH_CHAR}|^)   # CJK character, or start of string
          (\s*)$                   # Latin spaces optional
     /xo.freeze
     ZH2_PUNCT = /^\s*             # followed by ignorable Latin spaces
-                [:,.()\[\];?!-]*  # Latin punct which will also convert to CJK
+                #{LATIN_PUNCT}*   # Latin punct which will also convert to CJK
                 (#{ZH_CHAR}|$)    # CJK character, or end of string
       /xo.freeze
 
-    # CJK punct if (^|CJK).($|CJK)
+    # Context; CJK before, space after
+    # CJK char, followed by optional Latin punct which will also convert to CJK
+    ZH1_NO_SPACE = /#{ZH_CHAR}#{LATIN_PUNCT}*$/xo.freeze
+    # optional Latin punct which wil also convert to CJK, then space
+    OPT_PUNCT_SPACE = /^($|#{LATIN_PUNCT}*\s)/xo.freeze
+
     def l10n_zh_punct(text, prev, foll)
       [":：", ",，", ".。", ")）", "]］", ";；", "?？", "!！", "(（", "[［"].each do |m|
         text = l10n_gsub(text, prev, foll, [m[0], m[1]],
-                         [ZH1_PUNCT, ZH2_PUNCT])
+                         [[ZH1_PUNCT, ZH2_PUNCT],
+                          [ZH1_NO_SPACE, OPT_PUNCT_SPACE],
+                          [/(\s|^)$/, /^#{ZH_CHAR}/o]])
       end
       text
     end
@@ -99,18 +111,27 @@ module IsoDoc
       /xo.freeze
 
     def l10n_zh_dash(text, prev, foll)
-      l10n_gsub(text, prev, foll, %w(– ～), [ZH1_DASH, ZH2_DASH])
+      l10n_gsub(text, prev, foll, %w(– ～), [[ZH1_DASH, ZH2_DASH]])
     end
 
-    def l10n_gsub(text, prev, foll, delim, regex)
+    # text: string we are scanning for instances of delim[0] to replace
+    # prev: string preceding text, as additional token of context
+    # foll: string following text, as additional token of context
+    # delim: delim[0] is the symbol we want to replace, delim[1] its replacement
+    # regexes: a list of regex pairs: the context before the found token,
+    # and the context after the found token, under which replacing it
+    # with delim[1] is permitted
+    def l10n_gsub(text, prev, foll, delim, regexes)
       context = l10n_gsub_context(text, prev, foll, delim) or return text
       (1...(context.size - 1)).each do |i|
-        l10_context_valid?(context, i, delim, regex) and
+        l10_context_valid?(context, i, delim, regexes) and
           context[i] = delim[1].gsub("\\0", context[i]) # Full-width equivalent
       end
       context[1...(context.size - 1)].join
     end
 
+    # split string being scanned, and its contextual tokens before and after,
+    # into array of tokens determining whether to replace instances of delim[0]
     def l10n_gsub_context(text, prev, foll, delim)
       d = delim[0].is_a?(Regexp) ? delim[0] : Regexp.quote(delim[0])
       context = text.split(/(#{d})/) # delim to replace
@@ -119,30 +140,36 @@ module IsoDoc
     end
 
     def l10_context_valid?(context, idx, delim, regex)
-      found_delim = if delim[0].is_a?(Regexp) # punct to convert
-                      delim[0].match?(context[idx])
-                    else
-                      context[idx] == delim[0]
-                    end
-      found_delim &&
-        regex[0].match?(context[0...idx].join) && # preceding context
-        regex[1].match?(context[(idx + 1)..-1].join) # foll context
+      l10n_context_found_delimiter?(context[idx], delim) or return false
+      regex.detect do |r|
+        r[0].match?(context[0...idx].join) && # preceding context
+          r[1].match?(context[(idx + 1)..-1].join) # foll context
+      end
+    end
+
+    def l10n_context_found_delimiter?(token, delim)
+      if delim[0].is_a?(Regexp) # punct to convert
+        delim[0].match?(token)
+      else
+        token == delim[0]
+      end
     end
 
     def l10n_zh_remove_space(text, prev, foll)
       text = l10n_gsub(text, prev, foll, [" ", ""],
-                       [/(#{ZH_CHAR}|\d)$/o, /^#{ZH_CHAR}/o])
+                       [[/(#{ZH_CHAR}|\d)$/o, /^#{ZH_CHAR}/o]])
       l10n_gsub(text, prev, foll, [" ", ""],
-                [/#{ZH_CHAR}$/o, /^(\d|[A-Za-z](#{ZH_CHAR}|$))/o])
+                [[/#{ZH_CHAR}$/o, /^(\d|[A-Za-z](#{ZH_CHAR}|$))/o]])
     end
 
     def l10n_fr1(text, prev, foll, locale)
       text = l10n_gsub(text, prev, foll, [/[»›;?!]/, "\u202f\\0"],
-                       [/\p{Alnum}$/, /^(\s|$)/])
-      text = l10n_gsub(text, prev, foll, [/[«‹]/, "\\0\u202f"], [/$/, /^(?!\p{Zs})./])
+                       [[/\p{Alnum}$/, /^(\s|$)/]])
+      text = l10n_gsub(text, prev, foll, [/[«‹]/, "\\0\u202f"],
+                       [[/$/, /^(?!\p{Zs})./]])
       colonsp = locale == "CH" ? "\u202f" : "\u00a0"
       l10n_gsub(text, prev, foll, [":", "#{colonsp}\\0"],
-                [/\p{Alnum}$/, /^(\s|$)/])
+                [[/\p{Alnum}$/, /^(\s|$)/]])
     end
 
     def self.cjk_extend(text)

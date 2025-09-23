@@ -34,7 +34,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.text).to eq "text2"
     expect(c.labels["text"]).to eq("text2")
     expect(c.at).to eq "at"
-    expect(c.hashx).to be_equivalent_to({"key1"=>"val1", "key2"=>"val2"})
+    expect(c.hashx).to be_equivalent_to({ "key1" => "val1", "key2" => "val2" })
     expect(c.arrx).to eq(["arr1", "arr2"])
     expect(c.labels["arrx"]).to eq(["arr1", "arr2"])
     expect(c.get).not_to eq("text2")
@@ -46,7 +46,7 @@ RSpec.describe IsoDoc::I18n do
                          i18nhash: YAML.load_file("spec/assets/new.yaml"))
     expect(c.text).to eq "text2"
     expect(c.at).to eq "at"
-    expect(c.hashx).to be_equivalent_to({"key1"=>"val1", "key2"=>"val2"})
+    expect(c.hashx).to be_equivalent_to({ "key1" => "val1", "key2" => "val2" })
     expect(c.arrx).to eq ["arr1", "arr2"]
   end
 
@@ -92,6 +92,22 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
       .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
+  end
+
+  it "does CJK script mixing localisation" do
+    c = IsoDoc::I18n.new("ja", "Jpan")
+    expect(c.l10n("计算机代码: Japan"))
+      .to be_equivalent_to "计算机代码： Japan"
+    expect(c.l10n("Japan: 计算机代码"))
+      .to be_equivalent_to "Japan: 计算机代码"
+    expect(c.l10n("(Japan), 计算机代码"))
+      .to be_equivalent_to "(Japan), 计算机代码"
+    expect(c.l10n("(计算机代码), Japan"))
+      .to be_equivalent_to "（计算机代码）， Japan"
+    expect(c.l10n("Japan, (计算机代码)"))
+      .to be_equivalent_to "Japan, （计算机代码）"
+    expect(c.l10n("计算机代码, (Japan)"))
+      .to be_equivalent_to "计算机代码， (Japan)"
   end
 
   it "does Hebrew RTL localisation" do
@@ -147,8 +163,10 @@ RSpec.describe IsoDoc::I18n do
     expect(c.boolean_conj([], "and")).to eq ""
     expect(c.boolean_conj(%w(a), "and")).to eq "a"
     expect(c.boolean_conj(%w(a b), "and")).to eq "a <conn>and</conn> b"
-    expect(c.boolean_conj(%w(a b c), "and")).to eq "a<enum-comma>,</enum-comma> b<conn>, and</conn> c"
-    expect(c.boolean_conj(%w(a b c d), "and")).to eq "a<enum-comma>,</enum-comma> b<enum-comma>,</enum-comma> c<conn>, and</conn> d"
+    expect(c.boolean_conj(%w(a b c),
+                          "and")).to eq "a<enum-comma>,</enum-comma> b<conn>, and</conn> c"
+    expect(c.boolean_conj(%w(a b c d),
+                          "and")).to eq "a<enum-comma>,</enum-comma> b<enum-comma>,</enum-comma> c<conn>, and</conn> d"
   end
 
   it "does boolean conjunctions in Traditional Chinese" do
@@ -157,8 +175,10 @@ RSpec.describe IsoDoc::I18n do
     expect(c.boolean_conj([], "and")).to eq ""
     expect(c.boolean_conj(%w(a), "and")).to eq "a"
     expect(c.boolean_conj(%w(a b), "and")).to eq "a <conn>and</conn> b"
-    expect(c.boolean_conj(%w(a b c), "and")).to eq "a<enum-comma>、</enum-comma>b<conn>與</conn>c"
-    expect(c.boolean_conj(%w(a b c d), "and")).to eq "a<enum-comma>、</enum-comma>b<enum-comma>、</enum-comma>c<conn>與</conn>d"
+    expect(c.boolean_conj(%w(a b c),
+                          "and")).to eq "a<enum-comma>、</enum-comma>b<conn>與</conn>c"
+    expect(c.boolean_conj(%w(a b c d),
+                          "and")).to eq "a<enum-comma>、</enum-comma>b<enum-comma>、</enum-comma>c<conn>與</conn>d"
   end
 
   it "does German ordinals" do
