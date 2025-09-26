@@ -24,6 +24,8 @@ module IsoDoc
       self
     end
 
+    CJK_SCRIPTS = %w(Hans Hant Jpan Kore).freeze
+
     def liquid_init
       ::IsoDoc::I18n::Liquid.set(self)
       ::Liquid::Environment.default.register_filter(::IsoDoc::I18n::Liquid)
@@ -66,7 +68,7 @@ module IsoDoc
     end
 
     def enum_comma
-      %w(Hans Hant).include?(@script) and return "<enum-comma>、</enum-comma>"
+      CJK_SCRIPTS.include?(@script) and return "<enum-comma>、</enum-comma>"
       "<enum-comma>,</enum-comma> "
     end
 
