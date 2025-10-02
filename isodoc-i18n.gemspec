@@ -22,12 +22,13 @@ Gem::Specification.new do |spec|
   end
   spec.required_ruby_version = Gem::Requirement.new(">= 2.7.0")
 
+  spec.add_dependency "base64"
   spec.add_dependency "htmlentities", "~> 4.3.4"
   spec.add_dependency "liquid", "~> 5"
   spec.add_dependency "metanorma-utils", ">= 1.7.0"
   spec.add_dependency "twitter_cldr"
-  spec.add_dependency "base64"
 
+  spec.add_development_dependency "canon"
   spec.add_development_dependency "debug"
   spec.add_development_dependency "equivalent-xml", "~> 0.6"
   spec.add_development_dependency "guard", "~> 2.14"
@@ -35,10 +36,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.6"
   spec.add_development_dependency "rubocop", "~> 1"
-spec.add_development_dependency "rubocop-performance"
+  spec.add_development_dependency "rubocop-performance"
   spec.add_development_dependency "simplecov", "~> 0.15"
   spec.add_development_dependency "timecop", "~> 0.9"
   spec.add_development_dependency "webmock"
-  spec.add_development_dependency "canon"
   # spec.metadata["rubygems_mfa_required"] = "true"
 end

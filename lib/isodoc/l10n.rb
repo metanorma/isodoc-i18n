@@ -6,12 +6,12 @@ module IsoDoc
     # This includes Han, Katakana, Hiragana, Hangul, Bopomofo and all CJK extensions
     ZH_CHAR = "(#{Metanorma::Utils::CJK})".freeze
     LATIN_PUNCT = /[:,.()\[\];?!-]/.freeze
-    
+
     # Condition for converting punctuation to double width:
     # 1. (Strict condition) CJK before, CJK after, modulo ignorable characters:
     # 1a. CJK character, or start of string. Latin spaces optional.
-    ZH1_PUNCT = /(#{ZH_CHAR}|^)(\s*)$/xo.freeze 
-    # 1b. Latin spaces optional, Latin punct which will also convert to CJK, 
+    ZH1_PUNCT = /(#{ZH_CHAR}|^)(\s*)$/xo.freeze
+    # 1b. Latin spaces optional, Latin punct which will also convert to CJK,
     # CJK character, or end of string.
     ZH2_PUNCT = /^\s*#{LATIN_PUNCT}*(#{ZH_CHAR}|$)/xo.freeze
     # 2. CJK before, space after:
@@ -25,19 +25,50 @@ module IsoDoc
     ZH1_DASH = /(#{ZH_CHAR}|^)(\d*)$/xo.freeze
     # After: optional digits, CJK or end of string
     ZH2_DASH = /^\d*(#{ZH_CHAR}|$)/xo.freeze
-    
+
+    ZH_PUNCT_CONTEXTS =
+      [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE],
+       [/(\s|^)$/, /^#{ZH_CHAR}/o]].freeze
+
+    # map of YAML punct keys to auto-text Latin equivalents
+ZH_PUNCT_AUTOTEXT = {
+  colon: ":",
+  comma: ",",
+  "enum-comma": ",",
+  semicolon: ";",
+  period: ".",
+  "close-paren": ")",
+  "open-paren": "(",
+  "close-bracket": "]",
+  "open-bracket": "[",
+  "question-mark": "?",
+  "exclamation-mark": "!",
+  "em-dash": "—",
+  "open-quote": "“",
+  "close-quote": "”",
+  "open-nested-quote": "’",
+  "close-nested-quote": "’",
+  ellipse: "…",
+}
+
     # Pre-defined punctuation mappings for efficiency
+ def init_zh_punct_map
+   ZH_PUNCT_AUTOTEXT.each_with_object([]) do |(k, v), m|
+     m << [v, @labels["punct"][k.to_s], ZH_PUNCT_CONTEXTS]
+   end
+ end
+
     ZH_PUNCT_MAP = [
-      [":：", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      [",，", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      [".。", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      [")）", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      ["]］", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      [";；", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      ["?？", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      ["!！", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      ["(（", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      ["[［", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]]
+      [":：", ZH_PUNCT_CONTEXTS],
+      [",，", ZH_PUNCT_CONTEXTS],
+      [".。", ZH_PUNCT_CONTEXTS],
+      [")）", ZH_PUNCT_CONTEXTS],
+      ["]］", ZH_PUNCT_CONTEXTS],
+      [";；", ZH_PUNCT_CONTEXTS],
+      ["?？", ZH_PUNCT_CONTEXTS],
+      ["!！", ZH_PUNCT_CONTEXTS],
+      ["(（", ZH_PUNCT_CONTEXTS],
+      ["[［", ZH_PUNCT_CONTEXTS],
     ].freeze
 
     def self.l10n(text, lang = @lang, script = @script, options = {})
@@ -48,8 +79,11 @@ module IsoDoc
     # options[:prev] and options[:foll] are optional context strings
     def l10n(text, lang = @lang, script = @script, options = {})
       locale = options[:locale] || @locale
-      %w(zh ja ko).include?(lang) and text = l10n_zh(text, script, options[:prev], options[:foll])
-      lang == "fr" && text = l10n_fr(text, locale || "FR", options[:prev], options[:foll])
+      %w(zh ja
+         ko).include?(lang) and text = l10n_zh(text, script, options[:prev],
+                                               options[:foll])
+      lang == "fr" && text = l10n_fr(text, locale || "FR", options[:prev],
+                                     options[:foll])
       bidiwrap(text, lang, script)
     end
 
@@ -85,7 +119,7 @@ module IsoDoc
     end
 
     def l10n_prep(text, prev, foll)
-            xml = Nokogiri::XML::DocumentFragment.parse(text)
+      xml = Nokogiri::XML::DocumentFragment.parse(text)
       t = xml.xpath(".//text()")
       text_cache = build_text_cache(t, prev, foll)
       [t, text_cache, xml]
@@ -137,9 +171,11 @@ module IsoDoc
 
     def l10n_zh_punct(text, prev, foll)
       # Use pre-defined mapping for better performance
-      ZH_PUNCT_MAP.each do |mapping|
-        punct_pair, regexes = mapping
-        text = l10n_gsub(text, prev, foll, [punct_pair[0], punct_pair[1]], regexes)
+      @zh_punct_map ||= init_zh_punct_map
+      @zh_punct_map.each do |mapping|
+        punct_from, punct_to, regexes = mapping
+        text = l10n_gsub(text, prev, foll, [punct_from, punct_to],
+                         regexes)
       end
       text
     end

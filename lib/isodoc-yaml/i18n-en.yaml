@@ -2,3 +2,24 @@ text: text
 at: at
 binary_and: "%1 <conn>and</conn> %2"
 multiple_and: "%1<conn>, and</conn> %2"
+punct:
+  colon: ":"
+  comma: ","
+  enum_comma: ","
+  semicolon: ";"
+  period: "."
+  close_paren: ")"
+  open_paren: "("
+  close_bracket: "]"
+  open_bracket: "["
+  question_mark: "?"
+  exclamation_mark: "!"
+  em_dash: "—"
+  en_dash: "–"
+  number_en_dash: "–"
+  open_quote: "“"
+  close_quote: "”"
+  open_nested_quote: "’"
+  close_nested_quote: "’"
+  ellipse: …
+

@@ -59,7 +59,7 @@ RSpec.describe IsoDoc::I18n do
   end
 
   it "does Traditional Chinese localisation" do
-    c = IsoDoc::I18n.new("zh", "Hant")
+    c = IsoDoc::I18n.new("zh", "Hant", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
       .to be_equivalent_to "Code (hello, world.)"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
@@ -75,7 +75,7 @@ RSpec.describe IsoDoc::I18n do
   end
 
   it "does Simplified Chinese localisation" do
-    c = IsoDoc::I18n.new("zh", "Hans")
+    c = IsoDoc::I18n.new("zh", "Hans", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
       .to be_equivalent_to "Code (hello, world.)"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
@@ -85,7 +85,7 @@ RSpec.describe IsoDoc::I18n do
   end
 
   it "does Japanese localisation" do
-    c = IsoDoc::I18n.new("ja", "Jpan")
+    c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
       .to be_equivalent_to "Code (hello, world.)"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
@@ -95,7 +95,7 @@ RSpec.describe IsoDoc::I18n do
   end
 
   it "does CJK script mixing localisation" do
-    c = IsoDoc::I18n.new("ja", "Jpan")
+    c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("计算机代码: Japan"))
       .to be_equivalent_to "计算机代码： Japan"
     expect(c.l10n("Japan: 计算机代码"))
@@ -162,7 +162,10 @@ RSpec.describe IsoDoc::I18n do
     e = HTMLEntities.new
     c = IsoDoc::I18n.new("fr", "Latn")
     # Test that passing locale in options hash works the same as setting it in constructor
-    expect(e.encode(c.l10n("Code; «code» and: code!", "fr", "Latn", { locale: "CH" }), :hexadecimal))
+    expect(e.encode(
+             c.l10n("Code; «code» and: code!", "fr", "Latn",
+                    { locale: "CH" }), :hexadecimal
+           ))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#x202f;: code&#x202f;!"
     # Compare with constructor-set locale
@@ -251,29 +254,30 @@ RSpec.describe IsoDoc::I18n do
   end
 
   it "uses prev and foll context parameters" do
-    c = IsoDoc::I18n.new("zh", "Hans")
-    
+    c = IsoDoc::I18n.new("zh", "Hans",
+                         i18nyaml: "spec/assets/zh-Hans.yaml")
+
     # Test that context parameters are properly extracted and used
     # The comma should be converted when surrounded by CJK context
     expect(c.l10n(",", "zh", "Hans", { prev: "计算机代码", foll: "计算机代码" }))
       .to eq "，"
-    
+
     # Test with only prev context
     expect(c.l10n(",", "zh", "Hans", { prev: "计算机代码" }))
       .to eq "，"
-    
-    # Test with only foll context  
+
+    # Test with only foll context
     expect(c.l10n(",", "zh", "Hans", { foll: "计算机代码" }))
       .to eq "，"
-    
+
     # Test without context using English - should not convert
     c_en = IsoDoc::I18n.new("en", "Latn")
     expect(c_en.l10n(",")).to eq ","
-      
+
     # Test French with context parameters (should still work)
     c_fr = IsoDoc::I18n.new("fr", "Latn")
     result = c_fr.l10n(":", "fr", "Latn", { prev: "Code", foll: "end" })
-    expect(result).to include(":")  # Should still apply French spacing rules
+    expect(result).to include(":") # Should still apply French spacing rules
   end
 
   it "parses dates" do
