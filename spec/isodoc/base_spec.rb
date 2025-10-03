@@ -110,6 +110,35 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "Japan, （计算机代码）"
     expect(c.l10n("计算机代码, (Japan)"))
       .to be_equivalent_to "计算机代码， (Japan)"
+    expect(c.l10n("计算机代码 123"))
+      .to be_equivalent_to "计算机代码123"
+    expect(c.l10n("123 计算机代码"))
+      .to be_equivalent_to "123 计算机代码"
+    expect(c.l10n("版本 2.0 发布"))
+      .to be_equivalent_to "版本2.0 发布"
+
+    c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
+    punct = c.get["punct"]
+    punct["cjk-latin-separator"] = "$"
+    c.set("punct", punct)
+    expect(c.l10n("计算机代码: Japan"))
+      .to be_equivalent_to "计算机代码：$Japan"
+    expect(c.l10n("Japan: 计算机代码"))
+      .to be_equivalent_to "Japan: 计算机代码"
+    expect(c.l10n("(Japan), 计算机代码"))
+      .to be_equivalent_to "(Japan), 计算机代码"
+    expect(c.l10n("(计算机代码), Japan"))
+      .to be_equivalent_to "（计算机代码），$Japan"
+    expect(c.l10n("Japan, (计算机代码)"))
+      .to be_equivalent_to "Japan, （计算机代码）"
+    expect(c.l10n("计算机代码, (Japan)"))
+      .to be_equivalent_to "计算机代码， (Japan)"
+    expect(c.l10n("计算机代码 123"))
+      .to be_equivalent_to "计算机代码$123"
+    expect(c.l10n("123 计算机代码"))
+      .to be_equivalent_to "123$计算机代码"
+    expect(c.l10n("版本 2.0 发布"))
+      .to be_equivalent_to "版本$2.0$发布"
   end
 
   it "does Hebrew RTL localisation" do

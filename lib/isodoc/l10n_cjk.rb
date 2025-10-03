@@ -97,17 +97,24 @@ module IsoDoc
     end
 
     def l10n_zh_dash(text, prev, foll)
-      l10n_gsub(text, prev, foll, ["–", @labels["punct"]["en-dash"]],
-                [[ZH1_DASH, ZH2_DASH]])
+      text = l10n_gsub(text, prev, foll, ["–", @labels["punct"]["en-dash"]],
+                       [[ZH1_DASH, ZH2_DASH]])
       l10n_gsub(text, prev, foll, ["–", @labels["punct"]["number-en-dash"]],
                 [[ZH1_NUM_DASH, ZH2_NUM_DASH]])
     end
 
     def l10n_zh_remove_space(text, prev, foll)
       text = l10n_gsub(text, prev, foll, [" ", ""],
-                       [[/(#{ZH_CHAR}|\d)$/o, /^#{ZH_CHAR}/o]])
+                       [[/(#{ZH_CHAR})$/o, /^#{ZH_CHAR}/o]])
+      if sep = @labels["punct"]["cjk-latin-separator"]
+        text = l10n_gsub(text, prev, foll, [" ", sep],
+                         [[/#{ZH_CHAR}$/o, /^[\p{Latin}\p{N}]/o]])
+        text = l10n_gsub(text, prev, foll, [" ", sep],
+                         [[/[\p{Latin}\p{N}]$/o, /^#{ZH_CHAR}/o]])
+      else
       l10n_gsub(text, prev, foll, [" ", ""],
                 [[/#{ZH_CHAR}$/o, /^(\d|[A-Za-z](#{ZH_CHAR}|$))/o]])
+      end
     end
 
     def self.cjk_extend(text)
