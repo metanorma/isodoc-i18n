@@ -219,7 +219,7 @@ RSpec.describe IsoDoc::I18n do
 
   it "does boolean conjunctions in Traditional Chinese" do
     c = IsoDoc::I18n.new("zh", "Hant",
-                         i18nhash: YAML.load_file("spec/assets/new.yaml"))
+                         i18nhash: YAML.load_file("spec/assets/zh-Hans.yaml"))
     expect(c.boolean_conj([], "and")).to eq ""
     expect(c.boolean_conj(%w(a), "and")).to eq "a"
     expect(c.boolean_conj(%w(a b), "and")).to eq "a <conn>and</conn> b"

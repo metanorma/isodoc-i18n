@@ -1,5 +1,6 @@
 ordinal_keys: []
 SpelloutRules: spellout-ordinal
+multiple_and: "%1<conn>與</conn>%2"
 edition: Auflage
 inflection:
   Auflage:

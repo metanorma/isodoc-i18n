@@ -68,7 +68,8 @@ module IsoDoc
     end
 
     def enum_comma
-      CJK_SCRIPTS.include?(@script) and return "<enum-comma>、</enum-comma>"
+      CJK_SCRIPTS.include?(@script) and
+        return "<enum-comma>#{@labels['punct']['enum-comma']}</enum-comma>"
       "<enum-comma>,</enum-comma> "
     end
 
