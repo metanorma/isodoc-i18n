@@ -61,6 +61,7 @@ module IsoDoc
     # Pre-defined punctuation mappings for efficiency
     def init_zh_punct_map
       ZH_PUNCT_AUTOTEXT.each_with_object([]) do |(k, v), m|
+        @labels["punct"][k.to_s] or next
         m << [v, @labels["punct"][k.to_s], ZH_PUNCT_CONTEXTS]
       end
     end
