@@ -410,4 +410,133 @@ RSpec.describe IsoDoc::I18n do
     expect(c.populate("ordinal_word_masc_pl", { "var1" => 1 }))
       .to eq "premiers"
   end
+
+  it "resolves self-references with bracket notation" do
+    labels = {
+      "punct" => { "enum-comma" => "," },
+      "msg" => 'hello #{ self["punct"]["enum-comma"] }#'
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello ,"
+  end
+
+  it "resolves self-references with dot notation" do
+    labels = {
+      "punct" => { "comma" => "," },
+      "msg" => 'hello #{ self.punct.comma }#'
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello ,"
+  end
+
+  it "resolves self-references with mixed notation" do
+    labels = {
+      "punct" => { "enum-comma" => "," },
+      "msg" => 'hello #{ self.punct["enum-comma"] }#'
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello ,"
+  end
+
+  it "resolves multiple self-references in one string" do
+    labels = {
+      "punct" => { "comma" => ",", "period" => "." },
+      "msg" => 'hello #{ self["punct"]["comma"] }# world #{ self["punct"]["period"] }#'
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello , world ."
+  end
+
+  it "resolves self-references in arrays" do
+    labels = {
+      "punct" => { "enum-comma" => "," },
+      "msg" => ['hello #{ self["punct"]["enum-comma"] }#', "world"]
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"][0]).to eq "hello ,"
+    expect(result["msg"][1]).to eq "world"
+  end
+
+  it "resolves self-references with array indices" do
+    labels = {
+      "items" => ["first", "second", "third"],
+      "msg" => 'The item is: #{ self["items"][1] }#'
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "The item is: second"
+  end
+
+  it "resolves nested self-references" do
+    labels = {
+      "level1" => {
+        "level2" => {
+          "level3" => { "value" => "deep" }
+        }
+      },
+      "msg" => 'Value: #{ self["level1"]["level2"]["level3"]["value"] }#'
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "Value: deep"
+  end
+
+  it "handles self-references without spaces" do
+    labels = {
+      "punct" => { "comma" => "," },
+      "msg" => 'hello #{self["punct"]["comma"]}#'
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello ,"
+  end
+
+  it "raises error for non-existent path" do
+    labels = {
+      "punct" => { "comma" => "," },
+      "msg" => 'hello #{ self["punct"]["nonexistent"] }#'
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    expect { c.send(:self_reference_resolve, labels) }
+      .to raise_error(/Self-reference error/)
+  end
+
+  it "raises error for invalid array index" do
+    labels = {
+      "items" => ["first", "second"],
+      "msg" => 'Item: #{ self["items"][5] }#'
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    expect { c.send(:self_reference_resolve, labels) }
+      .to raise_error(/Self-reference error/)
+  end
+
+  it "preserves non-self-reference content" do
+    labels = {
+      "punct" => { "comma" => "," },
+      "msg" => 'This #{variable} is not a self-reference'
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq 'This #{variable} is not a self-reference'
+  end
+
+  it "resolves self-references in deeply nested structures" do
+    labels = {
+      "punct" => { "comma" => "," },
+      "nested" => {
+        "array" => [
+          { "key" => 'value #{ self["punct"]["comma"] }# here' }
+        ]
+      }
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["nested"]["array"][0]["key"]).to eq "value , here"
+  end
 end
