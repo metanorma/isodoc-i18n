@@ -25,9 +25,7 @@ module IsoDoc
     def resolve_references(obj, labels)
       case obj
       when Hash
-        obj.each_with_object({}) do |(k, v), result|
-          result[k] = resolve_references(v, labels)
-        end
+        obj.transform_values { |v| resolve_references(v, labels) }
       when Array
         obj.map { |item| resolve_references(item, labels) }
       when String
@@ -53,15 +51,13 @@ module IsoDoc
       segments.each do |segment|
         case current
         when Hash
-          unless current.key?(segment)
+          current.key?(segment) or
             raise "Self-reference error: Path '#{original_expr}' not found - key '#{segment}' does not exist"
-          end
           current = current[segment]
         when Array
           index = segment.to_i
-          unless segment =~ /^\d+$/ && index >= 0 && index < current.length
+          segment =~ /^\d+$/ && index >= 0 && index < current.length or
             raise "Self-reference error: Path '#{original_expr}' not found - invalid array index '#{segment}'"
-          end
           current = current[index]
         else
           raise "Self-reference error: Path '#{original_expr}' not found - cannot navigate through non-collection type"
@@ -73,22 +69,17 @@ module IsoDoc
 
     def parse_path(path_expr)
       segments = []
-      # Remove leading dot if present
-      path_expr = path_expr.sub(/^\./, '')
-      
+      path_expr = path_expr.sub(/^\./, "")
       # Split by dots and brackets while preserving the content
       parts = path_expr.scan(/\.?([\w-]+)|\[([^\]]+)\]/)
-      
       parts.each do |dot_part, bracket_part|
         if dot_part
           segments << dot_part
         elsif bracket_part
-          # Remove quotes if present
-          segment = bracket_part.strip.gsub(/^["']|["']$/, '')
+          segment = bracket_part.strip.gsub(/^["']|["']$/, "")
           segments << segment
         end
       end
-      
       segments
     end
 

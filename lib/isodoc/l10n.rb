@@ -11,11 +11,10 @@ module IsoDoc
     # options[:prev] and options[:foll] are optional context strings
     def l10n(text, lang = @lang, script = @script, options = {})
       locale = options[:locale] || @locale
-      %w(zh ja
-         ko).include?(lang) and text = l10n_zh(text, script, options[:prev],
-                                               options[:foll])
-      lang == "fr" && text = l10n_fr(text, locale || "FR", options[:prev],
-                                     options[:foll])
+      %w(zh ja ko).include?(lang) and
+        text = l10n_zh(text, script, options[:prev], options[:foll])
+      lang == "fr" and
+        text = l10n_fr(text, locale || "FR", options[:prev], options[:foll])
       bidiwrap(text, lang, script)
     end
 
