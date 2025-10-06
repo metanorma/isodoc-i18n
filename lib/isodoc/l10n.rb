@@ -88,6 +88,7 @@ module IsoDoc
     # and the context after the found token, under which replacing it
     # with delim[1] is permitted
     def l10n_gsub(text, prev, foll, delim, regexes)
+      delim[1] or return text
       context = l10n_gsub_context(text, prev, foll, delim) or return text
       (1...(context.size - 1)).each do |i|
         l10_context_valid?(context, i, delim, regexes) and
