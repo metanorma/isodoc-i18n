@@ -38,7 +38,7 @@ module IsoDoc
     def resolve_string_references(str, labels)
       # Match patterns like #{self["key"]["subkey"]} or #{self.key.subkey}
       # Allow spaces around the self expression
-      str.gsub(/\#\{\s*self((?:\[[^\]]+\]|\.[\w-]+)+)\s*\}/) do |match|
+      str.gsub(/\#\{\s*self([^\}]+?)\s*\}/) do |match|
         path_expr = Regexp.last_match(1)
         resolve_path(path_expr, labels, match)
       end
