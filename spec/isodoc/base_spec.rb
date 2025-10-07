@@ -96,6 +96,34 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
   end
 
+  it "does Chinese localisation with esc tags" do
+    c = IsoDoc::I18n.new("zh", "Hans", i18nyaml: "spec/assets/zh-Hans.yaml")
+    
+    # Text inside <esc> should not be processed, and <esc> tags should be stripped
+    # Without cjk-latin-separator (commented out in zh-Hans.yaml), spaces are preserved
+    # because the complex regex requires Latin to be directly followed by CJK
+    expect(c.l10n("你好 <esc>a<em>b</em>c</esc> 世界"))
+      .to be_equivalent_to "你好 a<em>b</em>c 世界"
+    # Input without spaces - output should also have no spaces
+    expect(c.l10n("计算机代码<esc>(hello, world.)</esc>你好"))
+      .to be_equivalent_to "计算机代码(hello, world.)你好"
+    
+    # With cjk-latin-separator set to "", simpler regex patterns are used
+    # and spaces between CJK and Latin are removed correctly
+    punct = c.get["punct"]
+    punct["cjk-latin-separator"] = ""
+    c.set("punct", punct)
+    
+    expect(c.l10n("你好 <esc>a<em>b</em>c</esc> 世界"))
+      .to be_equivalent_to "你好a<em>b</em>c世界"
+    # Input with spaces - with cjk-latin-separator="", spaces are removed
+    # because the regex skips punctuation to find Latin context
+    expect(c.l10n("计算机代码 <esc>(hello, world.)</esc> 你好"))
+      .to be_equivalent_to "计算机代码(hello, world.)你好"
+    expect(c.l10n("你好, <esc>world</esc> 世界."))
+      .to be_equivalent_to "你好，world世界。"
+  end
+
   it "does CJK script mixing localisation" do
     c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("计算机代码： Japan"))
@@ -210,14 +238,28 @@ RSpec.describe IsoDoc::I18n do
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"
+    expect(c.l10n("<a>Code</a>;<a> </a><a>«</a><a>c</a>ode» and: code!"))
+      .to be_equivalent_to "<a>Code</a>&#x202f;;<a> </a><a>«&#x202f;</a><a>c</a>ode&#x202f;» and&#xa0;: code&#x202f;!"
     c = IsoDoc::I18n.new("fr", "Latn", locale: "CH")
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#x202f;: code&#x202f;!"
     expect(c.l10n("<a>Code</a>;<a> </a><a>«</a><a>c</a>ode» and: code!"))
-      .to be_equivalent_to "<a>Code</a> ;<a> </a><a>« </a><a>c</a>ode » and : code !"
+      .to be_equivalent_to "<a>Code</a>&#x202f;;<a> </a><a>«&#x202f;</a><a>c</a>ode&#x202f;» and&#x202f;: code&#x202f;!"
     expect(e.encode(c.l10n("http://xyz a;b"), :hexadecimal))
       .to be_equivalent_to "http://xyz a;b"
+  end
+
+  it "does French localisation with esc tags" do
+    e = HTMLEntities.new
+    c = IsoDoc::I18n.new("fr", "Latn")
+    # Text inside <esc> should not be processed, and <esc> tags should be stripped
+    expect(c.l10n("hello <esc>a<em>b</em>c</esc> d"))
+      .to be_equivalent_to "hello a<em>b</em>c d"
+    expect(e.encode(c.l10n("Code; <esc>«code»</esc> and: code!"), :hexadecimal))
+      .to be_equivalent_to "Code&#x202f;; &#xab;code&#xbb; and&#xa0;: code&#x202f;!"
+    expect(e.encode(c.l10n("Text: <esc>word</esc> more!"), :hexadecimal))
+      .to be_equivalent_to "Text&#xa0;: word more&#x202f;!"
   end
 
   it "does French localisation with options hash" do

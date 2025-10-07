@@ -71,14 +71,15 @@ module IsoDoc
 
     def l10n_zh(text, script, options)
       script ||= "Hans"
-      t, text_cache, xml, prev, _foll = l10n_prep(text, options)
+      t, text_cache, xml, prev, _foll, esc_indices = l10n_prep(text, options)
       t.each_with_index do |n, i|
+        next if esc_indices.include?(i)  # Skip escaped nodes
         # Adjust index if prev context prepended
         prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
         text = cleanup_entities(n.text, is_xml: false)
         n.replace(l10_zh1(text, prev_ctx, foll_ctx, script, options))
       end
-      to_xml(xml).gsub(/<b>|<\/b>|<\?[^>]+>/, "")
+      to_xml(xml).gsub(/<b>|<\/b>|<\?[^>]+>|<esc>|<\/esc>/, "")  # Strip esc tags
     end
 
     # note: we can't differentiate comma from enumeration comma 、
@@ -112,10 +113,11 @@ module IsoDoc
       text = l10n_gsub(text, prev, foll, [" ", ""],
                        [[/(#{ZH_CHAR})$/o, /^#{ZH_CHAR}/o]])
       if sep = @labels.dig("punct", "cjk-latin-separator")
+        # Skip over punctuation to find Latin letters/numbers
         text = l10n_gsub(text, prev, foll, [" ", sep],
-                         [[/#{ZH_CHAR}$/o, /^[\p{Latin}\p{N}]/o]])
+                         [[/#{ZH_CHAR}$/o, /^\p{P}*[\p{Latin}\p{N}]/o]])
         l10n_gsub(text, prev, foll, [" ", sep],
-                  [[/[\p{Latin}\p{N}]$/o, /^#{ZH_CHAR}/o]])
+                  [[/[\p{Latin}\p{N}]\p{P}*$/o, /^#{ZH_CHAR}/o]])
       else
         l10n_gsub(text, prev, foll, [" ", ""],
                   [[/#{ZH_CHAR}$/o, /^(\d|[A-Za-z](#{ZH_CHAR}|$))/o]])
