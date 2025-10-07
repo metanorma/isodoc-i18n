@@ -1,11 +1,13 @@
 module IsoDoc
   class I18n
     # Use comprehensive CJK definition from metanorma-utils
-    # This includes Han, Katakana, Hiragana, Hangul, Bopomofo and all CJK extensions
+    # This includes Han, Katakana, Hiragana, Hangul, Bopomofo
+    # and all CJK extensions
     ZH_CHAR = "(#{Metanorma::Utils::CJK})".freeze
     LATIN_PUNCT = /[:,.()\[\];?!-]/.freeze
 
-    # Condition for converting punctuation to double width:
+    # Condition for converting punctuation to double width,
+    # in case of options[:proportional_mixed_cjk]
     # 1. (Strict condition) CJK before, CJK after, modulo ignorable characters:
     # 1a. CJK character, or start of string. Latin spaces optional.
     ZH1_PUNCT = /(#{ZH_CHAR}|^)(\s*)$/xo.freeze
@@ -13,13 +15,14 @@ module IsoDoc
     # CJK character, or end of string.
     ZH2_PUNCT = /^\s*#{LATIN_PUNCT}*(#{ZH_CHAR}|$)/xo.freeze
     # 2. CJK before, space after:
-    # 2a.  CJK char, followed by optional Latin punct which will also convert to CJK
+    # 2a. CJK char, followed by optional Latin punct which will also convert to CJK
     ZH1_NO_SPACE = /#{ZH_CHAR}#{LATIN_PUNCT}*$/xo.freeze
     # 2b. optional Latin punct which wil also convert to CJK, then space
     OPT_PUNCT_SPACE = /^($|#{LATIN_PUNCT}*\s)/xo.freeze
 
     # Chinese numerals (common + formal/financial forms)
-    # Explicit characters needed because Chinese numeral ideographs are not tagged with Unicode Number property
+    # Explicit characters needed because Chinese numeral ideographs
+    # are not tagged with Unicode Number property
     # Using alternation instead of character class to properly include \p{N}
     ZH_NUMERALS = "(?:[零一二三四五六七八九十百千万亿壹贰叁肆伍陆柒捌玖拾佰仟萬億兆]|\\p{N})".freeze
 
@@ -66,31 +69,32 @@ module IsoDoc
       end
     end
 
-    def l10n_zh(text, script, prev, foll)
+    def l10n_zh(text, script, options)
       script ||= "Hans"
-      t, text_cache, xml = l10n_prep(text, prev, foll)
+      t, text_cache, xml, prev, _foll = l10n_prep(text, options)
       t.each_with_index do |n, i|
         # Adjust index if prev context prepended
         prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
         text = cleanup_entities(n.text, is_xml: false)
-        n.replace(l10_zh1(text, prev_ctx, foll_ctx, script))
+        n.replace(l10_zh1(text, prev_ctx, foll_ctx, script, options))
       end
       to_xml(xml).gsub(/<b>|<\/b>|<\?[^>]+>/, "")
     end
 
     # note: we can't differentiate comma from enumeration comma 、
     # def l10_zh1(text, _script)
-    def l10_zh1(text, prev, foll, _script)
-      r = l10n_zh_punct(text, prev, foll)
+    def l10_zh1(text, prev, foll, _script, options)
+      r = l10n_zh_punct(text, prev, foll, options)
       r = l10n_zh_remove_space(r, prev, foll)
       l10n_zh_dash(r, prev, foll)
     end
 
-    def l10n_zh_punct(text, prev, foll)
+    def l10n_zh_punct(text, prev, foll, options)
       # Use pre-defined mapping for better performance
       @zh_punct_map ||= init_zh_punct_map
       @zh_punct_map.each do |mapping|
         punct_from, punct_to, regexes = mapping
+        options[:proportional_mixed_cjk] or regexes = nil
         text = l10n_gsub(text, prev, foll, [punct_from, punct_to],
                          regexes)
       end

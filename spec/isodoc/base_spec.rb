@@ -61,25 +61,25 @@ RSpec.describe IsoDoc::I18n do
   it "does Traditional Chinese localisation" do
     c = IsoDoc::I18n.new("zh", "Hant", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
       .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
     expect(c.l10n("3–9a, 算3–9, 壹–贰,  三–三"))
-      .to be_equivalent_to "3〜9a, 算3〜9, 壹〜贰，  三〜三"
+      .to be_equivalent_to "3〜9a，算3〜9，壹〜贰，  三〜三"
     expect(c.l10n("Paris–New York, 巴黎–纽约"))
-      .to be_equivalent_to "Paris–New York, 巴黎–纽约"
+      .to be_equivalent_to "Paris–New York，巴黎–纽约"
     expect(c.l10n("3<span>)</span>算<span>)</span>3)<span>算)</span>3"))
-      .to be_equivalent_to "3<span>)</span>算<span>)</span>3)<span>算)</span>3"
+      .to be_equivalent_to "3<span>）</span>算<span>）</span>3）<span>算）</span>3"
     expect(c.l10n("<span>)</span>算<span>)</span>)<span>算)</span>"))
-      .to be_equivalent_to "<span>）</span>算<span>）</span>)<span>算）</span>"
+      .to be_equivalent_to "<span>）</span>算<span>）</span>）<span>算）</span>"
   end
 
   it "does Simplified Chinese localisation" do
     c = IsoDoc::I18n.new("zh", "Hans", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
@@ -89,7 +89,7 @@ RSpec.describe IsoDoc::I18n do
   it "does Japanese localisation" do
     c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
@@ -98,23 +98,54 @@ RSpec.describe IsoDoc::I18n do
 
   it "does CJK script mixing localisation" do
     c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
-    expect(c.l10n("计算机代码: Japan"))
+    expect(c.l10n("计算机代码： Japan"))
       .to be_equivalent_to "计算机代码： Japan"
-    expect(c.l10n("Japan: 计算机代码"))
-      .to be_equivalent_to "Japan: 计算机代码"
+    expect(c.l10n("Japan：计算机代码"))
+      .to be_equivalent_to "Japan：计算机代码"
     expect(c.l10n("(Japan), 计算机代码"))
-      .to be_equivalent_to "(Japan), 计算机代码"
+      .to be_equivalent_to "（Japan），计算机代码"
     expect(c.l10n("(计算机代码), Japan"))
       .to be_equivalent_to "（计算机代码）， Japan"
     expect(c.l10n("Japan, (计算机代码)"))
-      .to be_equivalent_to "Japan, （计算机代码）"
+      .to be_equivalent_to "Japan，（计算机代码）"
     expect(c.l10n("计算机代码, (Japan)"))
-      .to be_equivalent_to "计算机代码， (Japan)"
+      .to be_equivalent_to "计算机代码，（Japan）"
     expect(c.l10n("计算机代码 123"))
       .to be_equivalent_to "计算机代码123"
     expect(c.l10n("123 计算机代码"))
       .to be_equivalent_to "123 计算机代码"
     expect(c.l10n("版本 2.0 发布"))
+      .to be_equivalent_to "版本2。0 发布"
+
+    expect(c.l10n("Code (hello, world.)", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "Code (hello, world.)"
+    expect(c.l10n("计算机代码: Japan", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "计算机代码： Japan"
+    expect(c.l10n("Japan: 计算机代码", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "Japan: 计算机代码"
+    expect(c.l10n("(Japan), 计算机代码", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "(Japan), 计算机代码"
+    expect(c.l10n("(计算机代码), Japan", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "（计算机代码）， Japan"
+    expect(c.l10n("Japan, (计算机代码)", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "Japan, （计算机代码）"
+    expect(c.l10n("计算机代码, (Japan)", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "计算机代码， (Japan)"
+    expect(c.l10n("计算机代码 123", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "计算机代码123"
+    expect(c.l10n("123 计算机代码", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "123 计算机代码"
+    expect(c.l10n("版本 2.0 发布", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
       .to be_equivalent_to "版本2.0 发布"
 
     c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
@@ -123,22 +154,22 @@ RSpec.describe IsoDoc::I18n do
     c.set("punct", punct)
     expect(c.l10n("计算机代码: Japan"))
       .to be_equivalent_to "计算机代码：$Japan"
-    expect(c.l10n("Japan: 计算机代码"))
-      .to be_equivalent_to "Japan: 计算机代码"
+    expect(c.l10n("Japan：计算机代码"))
+      .to be_equivalent_to "Japan：计算机代码"
     expect(c.l10n("(Japan), 计算机代码"))
-      .to be_equivalent_to "(Japan), 计算机代码"
+      .to be_equivalent_to "（Japan），计算机代码"
     expect(c.l10n("(计算机代码), Japan"))
       .to be_equivalent_to "（计算机代码），$Japan"
     expect(c.l10n("Japan, (计算机代码)"))
-      .to be_equivalent_to "Japan, （计算机代码）"
+      .to be_equivalent_to "Japan，（计算机代码）"
     expect(c.l10n("计算机代码, (Japan)"))
-      .to be_equivalent_to "计算机代码， (Japan)"
+      .to be_equivalent_to "计算机代码，（Japan）"
     expect(c.l10n("计算机代码 123"))
       .to be_equivalent_to "计算机代码$123"
     expect(c.l10n("123 计算机代码"))
       .to be_equivalent_to "123$计算机代码"
     expect(c.l10n("版本 2.0 发布"))
-      .to be_equivalent_to "版本$2.0$发布"
+      .to be_equivalent_to "版本$2。0$发布"
   end
 
   it "does Hebrew RTL localisation" do

@@ -9,12 +9,14 @@ module IsoDoc
 
     # function localising spaces and punctuation
     # options[:prev] and options[:foll] are optional context strings
+    # options[:proportional_mixed_cjk] allows contextual full-width vs
+    # half-width punctuation
     def l10n(text, lang = @lang, script = @script, options = {})
       locale = options[:locale] || @locale
       %w(zh ja ko).include?(lang) and
-        text = l10n_zh(text, script, options[:prev], options[:foll])
+        text = l10n_zh(text, script, options)
       lang == "fr" and
-        text = l10n_fr(text, locale || "FR", options[:prev], options[:foll])
+        text = l10n_fr(text, locale || "FR", options)
       bidiwrap(text, lang, script)
     end
 
@@ -36,11 +38,11 @@ module IsoDoc
          .default_script(@lang))]
     end
 
-    def l10n_prep(text, prev, foll)
+    def l10n_prep(text, options)
       xml = Nokogiri::XML::DocumentFragment.parse(text)
       t = xml.xpath(".//text()")
-      text_cache = build_text_cache(t, prev, foll)
-      [t, text_cache, xml]
+      text_cache = build_text_cache(t, options[:prev], options[:foll])
+      [t, text_cache, xml, options[:prev], options[:foll]]
     end
 
     # Cache text content once per method call to avoid repeated .text calls
@@ -69,8 +71,8 @@ module IsoDoc
       [prev, foll]
     end
 
-    def l10n_fr(text, locale, prev, foll)
-      t, text_cache, xml = l10n_prep(text, prev, foll)
+    def l10n_fr(text, locale, options)
+      t, text_cache, xml, prev, _foll = l10n_prep(text, options)
       t.each_with_index do |n, i|
         prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
         text = cleanup_entities(n.text, is_xml: false)
@@ -85,7 +87,7 @@ module IsoDoc
     # delim: delim[0] is the symbol we want to replace, delim[1] its replacement
     # regexes: a list of regex pairs: the context before the found token,
     # and the context after the found token, under which replacing it
-    # with delim[1] is permitted
+    # with delim[1] is permitted. If regex is nil, always allow the replacement
     def l10n_gsub(text, prev, foll, delim, regexes)
       delim[1] or return text
       context = l10n_gsub_context(text, prev, foll, delim) or return text
@@ -107,6 +109,7 @@ module IsoDoc
 
     def l10_context_valid?(context, idx, delim, regex)
       l10n_context_found_delimiter?(context[idx], delim) or return false
+      regex.nil? and return true
       regex.detect do |r|
         r[0].match?(context[0...idx].join) && # preceding context
           r[1].match?(context[(idx + 1)..-1].join) # foll context
