@@ -17,6 +17,7 @@ module IsoDoc
         text = l10n_zh(text, script, options)
       lang == "fr" and
         text = l10n_fr(text, locale || "FR", options)
+      text.gsub!(/<esc>|<\/esc>/, "") # Strip esc tags
       bidiwrap(text, lang, script)
     end
 
@@ -42,13 +43,13 @@ module IsoDoc
       xml = Nokogiri::XML::DocumentFragment.parse(text)
       t = xml.xpath(".//text()")
       text_cache = build_text_cache(t, options[:prev], options[:foll])
-      
+
       # Identify which text nodes are within <esc> tags
       esc_indices = Set.new
       t.each_with_index do |node, i|
         esc_indices.add(i) if node.ancestors("esc").any?
       end
-      
+
       [t, text_cache, xml, options[:prev], options[:foll], esc_indices]
     end
 
@@ -81,12 +82,13 @@ module IsoDoc
     def l10n_fr(text, locale, options)
       t, text_cache, xml, prev, _foll, esc_indices = l10n_prep(text, options)
       t.each_with_index do |n, i|
-        next if esc_indices.include?(i)  # Skip escaped nodes
+        next if esc_indices.include?(i) # Skip escaped nodes
+
         prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
         text = cleanup_entities(n.text, is_xml: false)
         n.replace(l10n_fr1(text, prev_ctx, foll_ctx, locale))
       end
-      to_xml(xml).gsub(/<esc>|<\/esc>/, "")  # Strip esc tags
+      to_xml(xml)
     end
 
     # text: string we are scanning for instances of delim[0] to replace

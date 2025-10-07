@@ -79,7 +79,7 @@ module IsoDoc
         text = cleanup_entities(n.text, is_xml: false)
         n.replace(l10_zh1(text, prev_ctx, foll_ctx, script, options))
       end
-      to_xml(xml).gsub(/<b>|<\/b>|<\?[^>]+>|<esc>|<\/esc>/, "")  # Strip esc tags
+      to_xml(xml).gsub(/<\/?em>|<\/?strong>|<\/?i>|<\/?b>/, "")
     end
 
     # note: we can't differentiate comma from enumeration comma 、

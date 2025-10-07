@@ -56,6 +56,8 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "Code (hello, world.)"
     expect(c.l10n("<a>Code (he<b>l</b>lo, world.)</a>"))
       .to be_equivalent_to "<a>Code (he<b>l</b>lo, world.)</a>"
+    expect(c.l10n("<a>Code (he<esc><b>l</b>lo</esc>, world.)</a>"))
+      .to be_equivalent_to "<a>Code (he<b>l</b>lo, world.)</a>"
   end
 
   it "does Traditional Chinese localisation" do
@@ -98,24 +100,26 @@ RSpec.describe IsoDoc::I18n do
 
   it "does Chinese localisation with esc tags" do
     c = IsoDoc::I18n.new("zh", "Hans", i18nyaml: "spec/assets/zh-Hans.yaml")
-    
-    # Text inside <esc> should not be processed, and <esc> tags should be stripped
-    # Without cjk-latin-separator (commented out in zh-Hans.yaml), spaces are preserved
+
+    # Text inside <esc> should not be processed,
+    # and <esc> tags should be stripped
+    # Without cjk-latin-separator (commented out in zh-Hans.yaml),
+    # spaces are preserved
     # because the complex regex requires Latin to be directly followed by CJK
-    expect(c.l10n("你好 <esc>a<em>b</em>c</esc> 世界"))
-      .to be_equivalent_to "你好 a<em>b</em>c 世界"
+    expect(c.l10n("你好 <esc>a<u>b</u>c</esc> 世界"))
+      .to be_equivalent_to "你好 a<u>b</u>c 世界"
     # Input without spaces - output should also have no spaces
     expect(c.l10n("计算机代码<esc>(hello, world.)</esc>你好"))
       .to be_equivalent_to "计算机代码(hello, world.)你好"
-    
+
     # With cjk-latin-separator set to "", simpler regex patterns are used
     # and spaces between CJK and Latin are removed correctly
     punct = c.get["punct"]
     punct["cjk-latin-separator"] = ""
     c.set("punct", punct)
-    
-    expect(c.l10n("你好 <esc>a<em>b</em>c</esc> 世界"))
-      .to be_equivalent_to "你好a<em>b</em>c世界"
+
+    expect(c.l10n("你好 <esc>a<u>b</u>c</esc> 世界"))
+      .to be_equivalent_to "你好a<u>b</u>c世界"
     # Input with spaces - with cjk-latin-separator="", spaces are removed
     # because the regex skips punctuation to find Latin context
     expect(c.l10n("计算机代码 <esc>(hello, world.)</esc> 你好"))
