@@ -67,7 +67,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
+      .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
     expect(c.l10n("3–9a, 算3–9, 壹–贰,  三–三"))
       .to be_equivalent_to "3〜9a，算3〜9，壹〜贰，  三〜三"
     expect(c.l10n("Paris–New York, 巴黎–纽约"))
@@ -85,7 +85,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
+      .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
   end
 
   it "does Japanese localisation" do
@@ -95,7 +95,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
+      .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
   end
 
   it "does Chinese localisation with esc tags" do

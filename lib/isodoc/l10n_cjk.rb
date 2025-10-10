@@ -73,13 +73,14 @@ module IsoDoc
       script ||= "Hans"
       t, text_cache, xml, prev, _foll, esc_indices = l10n_prep(text, options)
       t.each_with_index do |n, i|
-        next if esc_indices.include?(i)  # Skip escaped nodes
+        next if esc_indices.include?(i) # Skip escaped nodes
+
         # Adjust index if prev context prepended
         prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
         text = cleanup_entities(n.text, is_xml: false)
         n.replace(l10_zh1(text, prev_ctx, foll_ctx, script, options))
       end
-      to_xml(xml).gsub(/<\/?em>|<\/?strong>|<\/?i>|<\/?b>/, "")
+      to_xml(xml) #.gsub(/<\/?em>|<\/?strong>|<\/?i>|<\/?b>/, "")
     end
 
     # note: we can't differentiate comma from enumeration comma 、
