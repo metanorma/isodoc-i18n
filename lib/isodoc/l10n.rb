@@ -17,7 +17,7 @@ module IsoDoc
         text = l10n_zh(text, script, options)
       lang == "fr" and
         text = l10n_fr(text, locale || "FR", options)
-      text.gsub!(/<esc>|<\/esc>/, "") # Strip esc tags
+      text&.gsub!(/<esc>|<\/esc>/, "") # Strip esc tags
       bidiwrap(text, lang, script)
     end
 
