@@ -5,6 +5,19 @@ module IsoDoc
     # and all CJK extensions
     ZH_CHAR = "(#{Metanorma::Utils::CJK})".freeze
     LATIN_PUNCT = /[:,.()\[\];?!-]/.freeze
+    # CJK character which is not punctuation
+    ZH_NON_PUNCT = "(#{
+      [
+        Metanorma::Utils.singleton_class::HAN,
+        Metanorma::Utils.singleton_class::HAN_IDC,
+        Metanorma::Utils.singleton_class::KANBUN,
+        Metanorma::Utils.singleton_class::CJK_COMPAT_IDEOGRAPHS,
+        Metanorma::Utils.singleton_class::HAN_COMPAT_IDEOGRAPHS,
+        Metanorma::Utils.singleton_class::HANGUL,
+        Metanorma::Utils.singleton_class::HIRAGANA,
+        Metanorma::Utils.singleton_class::KATAKANA,
+        Metanorma::Utils.singleton_class::BOPOMOFO,
+      ].join("|")})".freeze
 
     # Condition for converting punctuation to double width,
     # in case of options[:proportional_mixed_cjk]
@@ -118,7 +131,7 @@ module IsoDoc
         text = l10n_gsub(text, prev, foll, [/\s+/, sep],
                          [[/#{ZH_CHAR}$/o, /^\p{P}*[\p{Latin}\p{N}]/o]])
         l10n_gsub(text, prev, foll, [/\s+/, sep],
-                  [[/[\p{Latin}\p{N}]\p{P}*$/o, /^#{ZH_CHAR}/o]])
+                  [[/[\p{Latin}\p{N}]\p{P}*$/o, /^#{ZH_NON_PUNCT}/o]])
       else
         l10n_gsub(text, prev, foll, [/\s+/, ""],
                   [[/#{ZH_CHAR}$/o, /^(\d|[A-Za-z](#{ZH_CHAR}|$))/o]])

@@ -150,6 +150,8 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "123 计算机代码"
     expect(c.l10n("版本 2.0 发布"))
       .to be_equivalent_to "版本2。0 发布"
+    expect(c.l10n("1,"))
+      .to be_equivalent_to "1，"
 
     expect(c.l10n("Code (hello, world.)", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
@@ -181,6 +183,8 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("版本 2.0 发布", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
       .to be_equivalent_to "版本2.0 发布"
+    expect(c.l10n("1,"))
+      .to be_equivalent_to "1，"
 
     c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
     punct = c.get["punct"]
@@ -204,6 +208,8 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "123$计算机代码"
     expect(c.l10n("版本 2.0 发布"))
       .to be_equivalent_to "版本$2。0$发布"
+    expect(c.l10n("1,"))
+      .to be_equivalent_to "1，"
   end
 
   it "does Hebrew RTL localisation" do
