@@ -111,16 +111,16 @@ module IsoDoc
     end
 
     def l10n_zh_remove_space(text, prev, foll)
-      text = l10n_gsub(text, prev, foll, [" ", ""],
+      text = l10n_gsub(text, prev, foll, [/\s+/, ""],
                        [[/(#{ZH_CHAR})$/o, /^#{ZH_CHAR}/o]])
       if sep = @labels.dig("punct", "cjk-latin-separator")
         # Skip over punctuation to find Latin letters/numbers
-        text = l10n_gsub(text, prev, foll, [" ", sep],
+        text = l10n_gsub(text, prev, foll, [/\s+/, sep],
                          [[/#{ZH_CHAR}$/o, /^\p{P}*[\p{Latin}\p{N}]/o]])
-        l10n_gsub(text, prev, foll, [" ", sep],
+        l10n_gsub(text, prev, foll, [/\s+/, sep],
                   [[/[\p{Latin}\p{N}]\p{P}*$/o, /^#{ZH_CHAR}/o]])
       else
-        l10n_gsub(text, prev, foll, [" ", ""],
+        l10n_gsub(text, prev, foll, [/\s+/, ""],
                   [[/#{ZH_CHAR}$/o, /^(\d|[A-Za-z](#{ZH_CHAR}|$))/o]])
       end
     end

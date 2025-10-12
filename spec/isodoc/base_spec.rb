@@ -69,13 +69,15 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
       .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
     expect(c.l10n("3–9a, 算3–9, 壹–贰,  三–三"))
-      .to be_equivalent_to "3〜9a，算3〜9，壹〜贰，  三〜三"
+      .to be_equivalent_to  "3〜9a，算3〜9，壹〜贰，三〜三"
     expect(c.l10n("Paris–New York, 巴黎–纽约"))
       .to be_equivalent_to "Paris–New York，巴黎–纽约"
     expect(c.l10n("3<span>)</span>算<span>)</span>3)<span>算)</span>3"))
       .to be_equivalent_to "3<span>）</span>算<span>）</span>3）<span>算）</span>3"
     expect(c.l10n("<span>)</span>算<span>)</span>)<span>算)</span>"))
       .to be_equivalent_to "<span>）</span>算<span>）</span>）<span>算）</span>"
+    expect(c.l10n("第    1〜1表"))
+      .to be_equivalent_to "第1〜1表"
   end
 
   it "does Simplified Chinese localisation" do
