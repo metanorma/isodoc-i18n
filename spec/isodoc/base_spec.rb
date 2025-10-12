@@ -56,58 +56,160 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "Code (hello, world.)"
     expect(c.l10n("<a>Code (he<b>l</b>lo, world.)</a>"))
       .to be_equivalent_to "<a>Code (he<b>l</b>lo, world.)</a>"
+    expect(c.l10n("<a>Code (he<esc><b>l</b>lo</esc>, world.)</a>"))
+      .to be_equivalent_to "<a>Code (he<b>l</b>lo, world.)</a>"
   end
 
   it "does Traditional Chinese localisation" do
-    c = IsoDoc::I18n.new("zh", "Hant")
+    c = IsoDoc::I18n.new("zh", "Hant", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
-    expect(c.l10n("3–9a, 算3–9"))
-      .to be_equivalent_to "3–9a, 算3～9"
+      .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
+    expect(c.l10n("3–9a, 算3–9, 壹–贰,  三–三"))
+      .to be_equivalent_to  "3〜9a，算3〜9，壹〜贰，三〜三"
+    expect(c.l10n("Paris–New York, 巴黎–纽约"))
+      .to be_equivalent_to "Paris–New York，巴黎–纽约"
     expect(c.l10n("3<span>)</span>算<span>)</span>3)<span>算)</span>3"))
-      .to be_equivalent_to "3<span>)</span>算<span>)</span>3)<span>算)</span>3"
+      .to be_equivalent_to "3<span>）</span>算<span>）</span>3）<span>算）</span>3"
     expect(c.l10n("<span>)</span>算<span>)</span>)<span>算)</span>"))
-      .to be_equivalent_to "<span>）</span>算<span>）</span>)<span>算）</span>"
+      .to be_equivalent_to "<span>）</span>算<span>）</span>）<span>算）</span>"
+    expect(c.l10n("第    1〜1表"))
+      .to be_equivalent_to "第1〜1表"
   end
 
   it "does Simplified Chinese localisation" do
-    c = IsoDoc::I18n.new("zh", "Hans")
+    c = IsoDoc::I18n.new("zh", "Hans", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
+      .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
   end
 
   it "does Japanese localisation" do
-    c = IsoDoc::I18n.new("ja", "Jpan")
+    c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
       .to be_equivalent_to " 计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a> （你好， 世界。）"
+      .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
+  end
+
+  it "does Chinese localisation with esc tags" do
+    c = IsoDoc::I18n.new("zh", "Hans", i18nyaml: "spec/assets/zh-Hans.yaml")
+
+    # Text inside <esc> should not be processed,
+    # and <esc> tags should be stripped
+    # Without cjk-latin-separator (commented out in zh-Hans.yaml),
+    # spaces are preserved
+    # because the complex regex requires Latin to be directly followed by CJK
+    expect(c.l10n("你好 <esc>a<u>b</u>c</esc> 世界"))
+      .to be_equivalent_to "你好 a<u>b</u>c 世界"
+    # Input without spaces - output should also have no spaces
+    expect(c.l10n("计算机代码<esc>(hello, world.)</esc>你好"))
+      .to be_equivalent_to "计算机代码(hello, world.)你好"
+
+    # With cjk-latin-separator set to "", simpler regex patterns are used
+    # and spaces between CJK and Latin are removed correctly
+    punct = c.get["punct"]
+    punct["cjk-latin-separator"] = ""
+    c.set("punct", punct)
+
+    expect(c.l10n("你好 <esc>a<u>b</u>c</esc> 世界"))
+      .to be_equivalent_to "你好a<u>b</u>c世界"
+    # Input with spaces - with cjk-latin-separator="", spaces are removed
+    # because the regex skips punctuation to find Latin context
+    expect(c.l10n("计算机代码 <esc>(hello, world.)</esc> 你好"))
+      .to be_equivalent_to "计算机代码(hello, world.)你好"
+    expect(c.l10n("你好, <esc>world</esc> 世界."))
+      .to be_equivalent_to "你好，world世界。"
   end
 
   it "does CJK script mixing localisation" do
-    c = IsoDoc::I18n.new("ja", "Jpan")
-    expect(c.l10n("计算机代码: Japan"))
+    c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
+    expect(c.l10n("计算机代码： Japan"))
       .to be_equivalent_to "计算机代码： Japan"
-    expect(c.l10n("Japan: 计算机代码"))
-      .to be_equivalent_to "Japan: 计算机代码"
+    expect(c.l10n("Japan：计算机代码"))
+      .to be_equivalent_to "Japan：计算机代码"
     expect(c.l10n("(Japan), 计算机代码"))
-      .to be_equivalent_to "(Japan), 计算机代码"
+      .to be_equivalent_to "（Japan），计算机代码"
     expect(c.l10n("(计算机代码), Japan"))
       .to be_equivalent_to "（计算机代码）， Japan"
     expect(c.l10n("Japan, (计算机代码)"))
-      .to be_equivalent_to "Japan, （计算机代码）"
+      .to be_equivalent_to "Japan，（计算机代码）"
     expect(c.l10n("计算机代码, (Japan)"))
+      .to be_equivalent_to "计算机代码，（Japan）"
+    expect(c.l10n("计算机代码 123"))
+      .to be_equivalent_to "计算机代码123"
+    expect(c.l10n("123 计算机代码"))
+      .to be_equivalent_to "123 计算机代码"
+    expect(c.l10n("版本 2.0 发布"))
+      .to be_equivalent_to "版本2。0 发布"
+    expect(c.l10n("1,"))
+      .to be_equivalent_to "1，"
+
+    expect(c.l10n("Code (hello, world.)", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "Code (hello, world.)"
+    expect(c.l10n("计算机代码: Japan", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "计算机代码： Japan"
+    expect(c.l10n("Japan: 计算机代码", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "Japan: 计算机代码"
+    expect(c.l10n("(Japan), 计算机代码", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "(Japan), 计算机代码"
+    expect(c.l10n("(计算机代码), Japan", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "（计算机代码）， Japan"
+    expect(c.l10n("Japan, (计算机代码)", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "Japan, （计算机代码）"
+    expect(c.l10n("计算机代码, (Japan)", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
       .to be_equivalent_to "计算机代码， (Japan)"
+    expect(c.l10n("计算机代码 123", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "计算机代码123"
+    expect(c.l10n("123 计算机代码", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "123 计算机代码"
+    expect(c.l10n("版本 2.0 发布", "ja", "Jpan",
+                  { proportional_mixed_cjk: true }))
+      .to be_equivalent_to "版本2.0 发布"
+    expect(c.l10n("1,"))
+      .to be_equivalent_to "1，"
+
+    c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
+    punct = c.get["punct"]
+    punct["cjk-latin-separator"] = "$"
+    c.set("punct", punct)
+    expect(c.l10n("计算机代码: Japan"))
+      .to be_equivalent_to "计算机代码：$Japan"
+    expect(c.l10n("Japan：计算机代码"))
+      .to be_equivalent_to "Japan：计算机代码"
+    expect(c.l10n("(Japan), 计算机代码"))
+      .to be_equivalent_to "（Japan），计算机代码"
+    expect(c.l10n("(计算机代码), Japan"))
+      .to be_equivalent_to "（计算机代码），$Japan"
+    expect(c.l10n("Japan, (计算机代码)"))
+      .to be_equivalent_to "Japan，（计算机代码）"
+    expect(c.l10n("计算机代码, (Japan)"))
+      .to be_equivalent_to "计算机代码，（Japan）"
+    expect(c.l10n("计算机代码 123"))
+      .to be_equivalent_to "计算机代码$123"
+    expect(c.l10n("123 计算机代码"))
+      .to be_equivalent_to "123$计算机代码"
+    expect(c.l10n("版本 2.0 发布"))
+      .to be_equivalent_to "版本$2。0$发布"
+    expect(c.l10n("1,"))
+      .to be_equivalent_to "1，"
   end
 
   it "does Hebrew RTL localisation" do
@@ -148,21 +250,38 @@ RSpec.describe IsoDoc::I18n do
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"
+    expect(c.l10n("<a>Code</a>;<a> </a><a>«</a><a>c</a>ode» and: code!"))
+      .to be_equivalent_to "<a>Code</a>&#x202f;;<a> </a><a>«&#x202f;</a><a>c</a>ode&#x202f;» and&#xa0;: code&#x202f;!"
     c = IsoDoc::I18n.new("fr", "Latn", locale: "CH")
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#x202f;: code&#x202f;!"
     expect(c.l10n("<a>Code</a>;<a> </a><a>«</a><a>c</a>ode» and: code!"))
-      .to be_equivalent_to "<a>Code</a> ;<a> </a><a>« </a><a>c</a>ode » and : code !"
+      .to be_equivalent_to "<a>Code</a>&#x202f;;<a> </a><a>«&#x202f;</a><a>c</a>ode&#x202f;» and&#x202f;: code&#x202f;!"
     expect(e.encode(c.l10n("http://xyz a;b"), :hexadecimal))
       .to be_equivalent_to "http://xyz a;b"
+  end
+
+  it "does French localisation with esc tags" do
+    e = HTMLEntities.new
+    c = IsoDoc::I18n.new("fr", "Latn")
+    # Text inside <esc> should not be processed, and <esc> tags should be stripped
+    expect(c.l10n("hello <esc>a<em>b</em>c</esc> d"))
+      .to be_equivalent_to "hello a<em>b</em>c d"
+    expect(e.encode(c.l10n("Code; <esc>«code»</esc> and: code!"), :hexadecimal))
+      .to be_equivalent_to "Code&#x202f;; &#xab;code&#xbb; and&#xa0;: code&#x202f;!"
+    expect(e.encode(c.l10n("Text: <esc>word</esc> more!"), :hexadecimal))
+      .to be_equivalent_to "Text&#xa0;: word more&#x202f;!"
   end
 
   it "does French localisation with options hash" do
     e = HTMLEntities.new
     c = IsoDoc::I18n.new("fr", "Latn")
     # Test that passing locale in options hash works the same as setting it in constructor
-    expect(e.encode(c.l10n("Code; «code» and: code!", "fr", "Latn", { locale: "CH" }), :hexadecimal))
+    expect(e.encode(
+             c.l10n("Code; «code» and: code!", "fr", "Latn",
+                    { locale: "CH" }), :hexadecimal
+           ))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#x202f;: code&#x202f;!"
     # Compare with constructor-set locale
@@ -185,7 +304,7 @@ RSpec.describe IsoDoc::I18n do
 
   it "does boolean conjunctions in Traditional Chinese" do
     c = IsoDoc::I18n.new("zh", "Hant",
-                         i18nhash: YAML.load_file("spec/assets/new.yaml"))
+                         i18nhash: YAML.load_file("spec/assets/zh-Hans.yaml"))
     expect(c.boolean_conj([], "and")).to eq ""
     expect(c.boolean_conj(%w(a), "and")).to eq "a"
     expect(c.boolean_conj(%w(a b), "and")).to eq "a <conn>and</conn> b"
@@ -251,29 +370,30 @@ RSpec.describe IsoDoc::I18n do
   end
 
   it "uses prev and foll context parameters" do
-    c = IsoDoc::I18n.new("zh", "Hans")
-    
+    c = IsoDoc::I18n.new("zh", "Hans",
+                         i18nyaml: "spec/assets/zh-Hans.yaml")
+
     # Test that context parameters are properly extracted and used
     # The comma should be converted when surrounded by CJK context
     expect(c.l10n(",", "zh", "Hans", { prev: "计算机代码", foll: "计算机代码" }))
       .to eq "，"
-    
+
     # Test with only prev context
     expect(c.l10n(",", "zh", "Hans", { prev: "计算机代码" }))
       .to eq "，"
-    
-    # Test with only foll context  
+
+    # Test with only foll context
     expect(c.l10n(",", "zh", "Hans", { foll: "计算机代码" }))
       .to eq "，"
-    
+
     # Test without context using English - should not convert
     c_en = IsoDoc::I18n.new("en", "Latn")
     expect(c_en.l10n(",")).to eq ","
-      
+
     # Test French with context parameters (should still work)
     c_fr = IsoDoc::I18n.new("fr", "Latn")
     result = c_fr.l10n(":", "fr", "Latn", { prev: "Code", foll: "end" })
-    expect(result).to include(":")  # Should still apply French spacing rules
+    expect(result).to include(":") # Should still apply French spacing rules
   end
 
   it "parses dates" do
@@ -374,5 +494,141 @@ RSpec.describe IsoDoc::I18n do
       .to eq "1ers"
     expect(c.populate("ordinal_word_masc_pl", { "var1" => 1 }))
       .to eq "premiers"
+  end
+
+  it "resolves self-references with bracket notation" do
+    labels = {
+      "punct" => { "enum-comma" => "," },
+      "msg" => 'hello #{ self["punct"]["enum-comma"] }',
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello ,"
+    labels = {
+      "punct" => { "enum-comma" => "," },
+      "msg" => "hello \#{ self['punct']['enum-comma'] }",
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello ,"
+  end
+
+  it "resolves self-references with dot notation" do
+    labels = {
+      "punct" => { "comma" => "," },
+      "msg" => 'hello #{ self.punct.comma }',
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello ,"
+  end
+
+  it "resolves self-references with mixed notation" do
+    labels = {
+      "punct" => { "enum-comma" => "," },
+      "msg" => 'hello #{ self.punct["enum-comma"] }',
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello ,"
+  end
+
+  it "resolves multiple self-references in one string" do
+    labels = {
+      "punct" => { "comma" => ",", "period" => "." },
+      "msg" => 'hello #{ self["punct"]["comma"] } world #{ self["punct"]["period"] }',
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello , world ."
+  end
+
+  it "resolves self-references in arrays" do
+    labels = {
+      "punct" => { "enum-comma" => "," },
+      "msg" => ['hello #{ self["punct"]["enum-comma"] }', "world"],
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"][0]).to eq "hello ,"
+    expect(result["msg"][1]).to eq "world"
+  end
+
+  it "resolves self-references with array indices" do
+    labels = {
+      "items" => ["first", "second", "third"],
+      "msg" => 'The item is: #{ self["items"][1] }',
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "The item is: second"
+  end
+
+  it "resolves nested self-references" do
+    labels = {
+      "level1" => {
+        "level2" => {
+          "level3" => { "value" => "deep" },
+        },
+      },
+      "msg" => 'Value: #{ self["level1"]["level2"]["level3"]["value"] }',
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "Value: deep"
+  end
+
+  it "handles self-references without spaces" do
+    labels = {
+      "punct" => { "comma" => "," },
+      "msg" => 'hello #{self["punct"]["comma"]}',
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq "hello ,"
+  end
+
+  it "raises error for non-existent path" do
+    labels = {
+      "punct" => { "comma" => "," },
+      "msg" => 'hello #{ self["punct"]["nonexistent"] }',
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    expect { c.send(:self_reference_resolve, labels) }
+      .to raise_error(/Self-reference error/)
+  end
+
+  it "raises error for invalid array index" do
+    labels = {
+      "items" => ["first", "second"],
+      "msg" => 'Item: #{ self["items"][5] }',
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    expect { c.send(:self_reference_resolve, labels) }
+      .to raise_error(/Self-reference error/)
+  end
+
+  it "preserves non-self-reference content" do
+    labels = {
+      "punct" => { "comma" => "," },
+      "msg" => 'This #{variable} is not a self-reference',
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["msg"]).to eq 'This #{variable} is not a self-reference'
+  end
+
+  it "resolves self-references in deeply nested structures" do
+    labels = {
+      "punct" => { "comma" => "," },
+      "nested" => {
+        "array" => [
+          { "key" => 'value #{ self["punct"]["comma"] } here' },
+        ],
+      },
+    }
+    c = IsoDoc::I18n.new("en", "Latn")
+    result = c.send(:self_reference_resolve, labels)
+    expect(result["nested"]["array"][0]["key"]).to eq "value , here"
   end
 end

@@ -1,8 +1,30 @@
 ordinal_keys: []
 SpelloutRules: spellout-ordinal
+multiple_and: "%1<conn>與</conn>%2"
 edition: Auflage
 inflection:
   Auflage:
     grammar:
       gender: f
-
+punct:
+  colon: "："
+  comma: "，"
+  enum-comma: "、"
+  semicolon: "；"
+  period: "。"
+  close-paren: "）"
+  open-paren: "（"
+  close-bracket: "］"
+  open-bracket: "［"
+  question-mark: "？"
+  exclamation-mark: "！"
+  emphasis-mark: •
+  em-dash: ⸺
+  en-dash: "–"
+  number-en-dash: "〜"
+  open-quote: "“"
+  close-quote: "”"
+  open-nested-quote: "’"
+  close-nested-quote: "’"
+  ellipse: ⋯⋯
+  # cjk-latin-separator: ""

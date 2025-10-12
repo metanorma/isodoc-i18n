@@ -1,55 +1,23 @@
 require "metanorma-utils"
+require_relative "l10n_cjk"
 
 module IsoDoc
   class I18n
-    # Use comprehensive CJK definition from metanorma-utils
-    # This includes Han, Katakana, Hiragana, Hangul, Bopomofo and all CJK extensions
-    ZH_CHAR = "(#{Metanorma::Utils::CJK})".freeze
-    LATIN_PUNCT = /[:,.()\[\];?!-]/.freeze
-    
-    # Condition for converting punctuation to double width:
-    # 1. (Strict condition) CJK before, CJK after, modulo ignorable characters:
-    # 1a. CJK character, or start of string. Latin spaces optional.
-    ZH1_PUNCT = /(#{ZH_CHAR}|^)(\s*)$/xo.freeze 
-    # 1b. Latin spaces optional, Latin punct which will also convert to CJK, 
-    # CJK character, or end of string.
-    ZH2_PUNCT = /^\s*#{LATIN_PUNCT}*(#{ZH_CHAR}|$)/xo.freeze
-    # 2. CJK before, space after:
-    # 2a.  CJK char, followed by optional Latin punct which will also convert to CJK
-    ZH1_NO_SPACE = /#{ZH_CHAR}#{LATIN_PUNCT}*$/xo.freeze
-    # 2b. optional Latin punct which wil also convert to CJK, then space
-    OPT_PUNCT_SPACE = /^($|#{LATIN_PUNCT}*\s)/xo.freeze
-
-    # Contexts for converting en-dashes to full-width
-    # Before: CJK or start of string, optional digits
-    ZH1_DASH = /(#{ZH_CHAR}|^)(\d*)$/xo.freeze
-    # After: optional digits, CJK or end of string
-    ZH2_DASH = /^\d*(#{ZH_CHAR}|$)/xo.freeze
-    
-    # Pre-defined punctuation mappings for efficiency
-    ZH_PUNCT_MAP = [
-      [":：", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      [",，", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      [".。", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      [")）", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      ["]］", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      [";；", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      ["?？", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      ["!！", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      ["(（", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]],
-      ["[［", [[ZH1_PUNCT, ZH2_PUNCT], [ZH1_NO_SPACE, OPT_PUNCT_SPACE], [/(\s|^)$/, /^#{ZH_CHAR}/o]]]
-    ].freeze
-
     def self.l10n(text, lang = @lang, script = @script, options = {})
       l10n(text, lang, script, options)
     end
 
     # function localising spaces and punctuation
     # options[:prev] and options[:foll] are optional context strings
+    # options[:proportional_mixed_cjk] allows contextual full-width vs
+    # half-width punctuation
     def l10n(text, lang = @lang, script = @script, options = {})
       locale = options[:locale] || @locale
-      %w(zh ja ko).include?(lang) and text = l10n_zh(text, script, options[:prev], options[:foll])
-      lang == "fr" && text = l10n_fr(text, locale || "FR", options[:prev], options[:foll])
+      %w(zh ja ko).include?(lang) and
+        text = l10n_zh(text, script, options)
+      lang == "fr" and
+        text = l10n_fr(text, locale || "FR", options)
+      text&.gsub!(/<esc>|<\/esc>/, "") # Strip esc tags
       bidiwrap(text, lang, script)
     end
 
@@ -71,30 +39,25 @@ module IsoDoc
          .default_script(@lang))]
     end
 
-    # CJK
-    def l10n_zh(text, script, prev, foll)
-      script ||= "Hans"
-      t, text_cache, xml = l10n_prep(text, prev, foll)
-      t.each_with_index do |n, i|
-        # Adjust index if prev context prepended
-        prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
-        text = cleanup_entities(n.text, is_xml: false)
-        n.replace(l10_zh1(text, prev_ctx, foll_ctx, script))
-      end
-      to_xml(xml).gsub(/<b>|<\/b>|<\?[^>]+>/, "")
-    end
+    def l10n_prep(text, options)
+      xml = Nokogiri::XML::DocumentFragment.parse(text)
+      t = xml.xpath(".//text()").reject { |node| node.text.empty? }
+      text_cache = build_text_cache(t, options[:prev], options[:foll])
 
-    def l10n_prep(text, prev, foll)
-            xml = Nokogiri::XML::DocumentFragment.parse(text)
-      t = xml.xpath(".//text()")
-      text_cache = build_text_cache(t, prev, foll)
-      [t, text_cache, xml]
+      # Identify which text nodes are within <esc> tags
+      esc_indices = Set.new
+      t.each_with_index do |node, i|
+        esc_indices.add(i) if node.ancestors("esc").any?
+      end
+
+      [t, text_cache, xml, options[:prev], options[:foll], esc_indices]
     end
 
     # Cache text content once per method call to avoid repeated .text calls
     # Build text cache with optional prepended/appended context
+    # Also, reduce multiple spaces to single, to avoid miscrecognition of space
     def build_text_cache(text_nodes, prev_context = nil, foll_context = nil)
-      text_cache = text_nodes.map(&:text)
+      text_cache = text_nodes.map(&:text).map { |x| x.gsub(/\s+/, " ") }
       text_cache.unshift(prev_context) if prev_context
       text_cache.push(foll_context) if foll_context
       text_cache
@@ -117,35 +80,16 @@ module IsoDoc
       [prev, foll]
     end
 
-    def l10n_fr(text, locale, prev, foll)
-      t, text_cache, xml = l10n_prep(text, prev, foll)
+    def l10n_fr(text, locale, options)
+      t, text_cache, xml, prev, _foll, esc_indices = l10n_prep(text, options)
       t.each_with_index do |n, i|
+        next if esc_indices.include?(i) # Skip escaped nodes
+
         prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
         text = cleanup_entities(n.text, is_xml: false)
         n.replace(l10n_fr1(text, prev_ctx, foll_ctx, locale))
       end
       to_xml(xml)
-    end
-
-    # note: we can't differentiate comma from enumeration comma 、
-    # def l10_zh1(text, _script)
-    def l10_zh1(text, prev, foll, _script)
-      r = l10n_zh_punct(text, prev, foll)
-      r = l10n_zh_remove_space(r, prev, foll)
-      l10n_zh_dash(r, prev, foll)
-    end
-
-    def l10n_zh_punct(text, prev, foll)
-      # Use pre-defined mapping for better performance
-      ZH_PUNCT_MAP.each do |mapping|
-        punct_pair, regexes = mapping
-        text = l10n_gsub(text, prev, foll, [punct_pair[0], punct_pair[1]], regexes)
-      end
-      text
-    end
-
-    def l10n_zh_dash(text, prev, foll)
-      l10n_gsub(text, prev, foll, %w(– ～), [[ZH1_DASH, ZH2_DASH]])
     end
 
     # text: string we are scanning for instances of delim[0] to replace
@@ -154,8 +98,9 @@ module IsoDoc
     # delim: delim[0] is the symbol we want to replace, delim[1] its replacement
     # regexes: a list of regex pairs: the context before the found token,
     # and the context after the found token, under which replacing it
-    # with delim[1] is permitted
+    # with delim[1] is permitted. If regex is nil, always allow the replacement
     def l10n_gsub(text, prev, foll, delim, regexes)
+      delim[1] or return text
       context = l10n_gsub_context(text, prev, foll, delim) or return text
       (1...(context.size - 1)).each do |i|
         l10_context_valid?(context, i, delim, regexes) and
@@ -170,11 +115,12 @@ module IsoDoc
       d = delim[0].is_a?(Regexp) ? delim[0] : Regexp.quote(delim[0])
       context = text.split(/(#{d})/) # delim to replace
       context.size == 1 and return
-      [prev, context, foll].flatten
+      [prev, context.reject(&:empty?), foll].flatten
     end
 
     def l10_context_valid?(context, idx, delim, regex)
       l10n_context_found_delimiter?(context[idx], delim) or return false
+      regex.nil? and return true
       regex.detect do |r|
         r[0].match?(context[0...idx].join) && # preceding context
           r[1].match?(context[(idx + 1)..-1].join) # foll context
@@ -189,13 +135,6 @@ module IsoDoc
       end
     end
 
-    def l10n_zh_remove_space(text, prev, foll)
-      text = l10n_gsub(text, prev, foll, [" ", ""],
-                       [[/(#{ZH_CHAR}|\d)$/o, /^#{ZH_CHAR}/o]])
-      l10n_gsub(text, prev, foll, [" ", ""],
-                [[/#{ZH_CHAR}$/o, /^(\d|[A-Za-z](#{ZH_CHAR}|$))/o]])
-    end
-
     def l10n_fr1(text, prev, foll, locale)
       text = l10n_gsub(text, prev, foll, [/[»›;?!]/, "\u202f\\0"],
                        [[/\p{Alnum}$/, /^(\s|$)/]])
@@ -204,30 +143,6 @@ module IsoDoc
       colonsp = locale == "CH" ? "\u202f" : "\u00a0"
       l10n_gsub(text, prev, foll, [":", "#{colonsp}\\0"],
                 [[/\p{Alnum}$/, /^(\s|$)/]])
-    end
-
-    def self.cjk_extend(text)
-      cjk_extend(text)
-    end
-
-    def cjk_extend(title)
-      @c.decode(title).chars.map.with_index do |n, i|
-        if i.zero? || !interleave_space_cjk?(title[i - 1] + title[i])
-          n
-        else "\u3000#{n}"
-        end
-      end.join
-    end
-
-    def interleave_space_cjk?(text)
-      text.size == 2 or return
-      ["\u2014\u2014", "\u2025\u2025", "\u2026\u2026",
-       "\u22ef\u22ef"].include?(text) ||
-        /\d\d|\p{Latin}\p{Latin}|[[:space:]]/.match?(text) ||
-        /^[\u2018\u201c(\u3014\[{\u3008\u300a\u300c\u300e\u3010\u2985\u3018\u3016\u00ab\u301d]/.match?(text) ||
-        /[\u2019\u201d)\u3015\]}\u3009\u300b\u300d\u300f\u3011\u2986\u3019\u3017\u00bb\u301f]$/.match?(text) ||
-        /[\u3002.\u3001,\u30fb:;\u2010\u301c\u30a0\u2013!?\u203c\u2047\u2048\u2049]/.match?(text) and return false
-      true
     end
 
     def to_xml(node)
