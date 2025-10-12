@@ -55,8 +55,9 @@ module IsoDoc
 
     # Cache text content once per method call to avoid repeated .text calls
     # Build text cache with optional prepended/appended context
+    # Also, reduce multiple spaces to single, to avoid miscrecognition of space
     def build_text_cache(text_nodes, prev_context = nil, foll_context = nil)
-      text_cache = text_nodes.map(&:text)
+      text_cache = text_nodes.map(&:text).gsub("/\s+/", " ")
       text_cache.unshift(prev_context) if prev_context
       text_cache.push(foll_context) if foll_context
       text_cache
