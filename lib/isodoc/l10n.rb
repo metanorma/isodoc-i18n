@@ -41,7 +41,7 @@ module IsoDoc
 
     def l10n_prep(text, options)
       xml = Nokogiri::XML::DocumentFragment.parse(text)
-      t = xml.xpath(".//text()")
+      t = xml.xpath(".//text()").reject { |node| node.text.empty? }
       text_cache = build_text_cache(t, options[:prev], options[:foll])
 
       # Identify which text nodes are within <esc> tags
@@ -114,7 +114,7 @@ module IsoDoc
       d = delim[0].is_a?(Regexp) ? delim[0] : Regexp.quote(delim[0])
       context = text.split(/(#{d})/) # delim to replace
       context.size == 1 and return
-      [prev, context, foll].flatten
+      [prev, context.reject(&:empty?), foll].flatten
     end
 
     def l10_context_valid?(context, idx, delim, regex)
