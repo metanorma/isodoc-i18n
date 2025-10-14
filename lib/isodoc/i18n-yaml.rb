@@ -7,10 +7,13 @@ module IsoDoc
 
     def load_yaml(lang, script, i18nyaml = nil, i18nhash = nil)
       ret = load_yaml1(lang, script)
-      i18nyaml and
-        return postprocess(ret.deep_merge(YAML.load_file(i18nyaml)))
+      if i18nyaml
+        Array(i18nyaml).compact.each do |y|
+          ret = ret.deep_merge(YAML.load_file(y))
+        end
+        return postprocess(ret)
+      end
       i18nhash and return postprocess(ret.deep_merge(i18nhash))
-
       postprocess(ret)
     end
 
@@ -38,7 +41,7 @@ module IsoDoc
     def resolve_string_references(str, labels)
       # Match patterns like #{self["key"]["subkey"]} or #{self.key.subkey}
       # Allow spaces around the self expression
-      str.gsub(/\#\{\s*self([^\}]+?)\s*\}/) do |match|
+      str.gsub(/\#\{\s*self([^}]+?)\s*\}/) do |match|
         path_expr = Regexp.last_match(1)
         resolve_path(path_expr, labels, match)
       end

@@ -6,6 +6,7 @@ arrx:
   - arr2
 text: "&#x74;ext2"
 get: "ABC"
+edition: "édition"
 hash_liquid:
   key1: A {{ var1 }} B
 text_liquid: C {{var2}} D {{var3}} E
