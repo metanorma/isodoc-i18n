@@ -39,6 +39,16 @@ RSpec.describe IsoDoc::I18n do
     expect(c.labels["arrx"]).to eq(["arr1", "arr2"])
     expect(c.get).not_to eq("text2")
     expect(c.labels["get"]).to eq("ABC")
+    expect(c.edition).to eq "édition"
+
+    c = IsoDoc::I18n.new("en", "Latn", i18nyaml: "spec/assets/zh-Hans.yaml")
+    expect(c.text).to eq "text"
+    expect(c.edition).to eq "Auflage"
+
+    c = IsoDoc::I18n.new("en", "Latn", i18nyaml: ["spec/assets/new.yaml",
+                                                  "spec/assets/zh-Hans.yaml"])
+    expect(c.text).to eq "text2"
+    expect(c.edition).to eq "Auflage"
   end
 
   it "loads language hash overrides" do
@@ -69,7 +79,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
       .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
     expect(c.l10n("3–9a, 算3–9, 壹–贰,  三–三"))
-      .to be_equivalent_to  "3〜9a，算3〜9，壹〜贰，三〜三"
+      .to be_equivalent_to "3〜9a，算3〜9，壹〜贰，三〜三"
     expect(c.l10n("Paris–New York, 巴黎–纽约"))
       .to be_equivalent_to "Paris–New York，巴黎–纽约"
     expect(c.l10n("3<span>)</span>算<span>)</span>3)<span>算)</span>3"))
