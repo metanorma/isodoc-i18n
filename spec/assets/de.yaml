@@ -6,8 +6,29 @@ SpelloutRules:
   m.pl: spellout-ordinal
   f.pl: spellout-ordinal
   n.pl: spellout-ordinal
+OrdinalRules:
+  m.sg: digits-ordinal
+  f.sg: digits-ordinal
+  n.sg: digits-ordinal
+  m.pl: digits-ordinal
+  f.pl: digits-ordinal
+  n.pl: digits-ordinal
 edition: Auflage
+ordinal_num_blank_blank: "{{ var1 | ordinal_num: '', '' }}"
+ordinal_word_blank_blank: "{{ var1 | ordinal_word: '', '' }}"
+ordinal_num_man_blank: "{{ var1 | ordinal_num: 'man', '' }}"
+ordinal_word_man_blank: "{{ var1 | ordinal_word: 'man', '' }}"
+ordinal_num_woman_blank: "{{ var1 | ordinal_num: 'woman', '' }}"
+ordinal_word_woman_blank: "{{ var1 | ordinal_word: 'woman', '' }}"
+man: Man
+woman: Woman
 inflection:
   Auflage:
+    grammar:
+      gender: f
+  Man:
+    grammar:
+      gender: m
+  Woman:
     grammar:
       gender: f
