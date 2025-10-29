@@ -71,11 +71,9 @@ module IsoDoc
     end
 
     def parse_path(path_expr)
-      segments = []
-      path_expr = path_expr.sub(/^\./, "")
       # Split by dots and brackets while preserving the content
-      parts = path_expr.scan(/\.?([\w-]+)|\[([^\]]+)\]/)
-      parts.each do |dot_part, bracket_part|
+      parts = path_expr.sub(/^\./, "").scan(/\.?([\w-]+)|\[([^\]]+)\]/)
+      parts.each_with_object([]) do |(dot_part, bracket_part), segments|
         if dot_part
           segments << dot_part
         elsif bracket_part
@@ -83,7 +81,6 @@ module IsoDoc
           segments << segment
         end
       end
-      segments
     end
 
     def normalise_hash(ret)
