@@ -44,13 +44,21 @@ module IsoDoc
       t = xml.xpath(".//text()").reject { |node| node.text.empty? }
       text_cache = build_text_cache(t, options[:prev], options[:foll])
 
-      # Identify which text nodes are within <esc> tags
-      esc_indices = Set.new
-      t.each_with_index do |node, i|
-        esc_indices.add(i) if node.ancestors("esc").any?
-      end
+      # Find all text nodes within <esc> tags in one XPath query
+      # This is O(n) instead of O(n*m) where m is tree depth
+      esc_indices = build_esc_indices(xml, t)
 
       [t, text_cache, xml, options[:prev], options[:foll], esc_indices]
+    end
+
+    # Build set of indices for text nodes within <esc> tags
+    def build_esc_indices(xml, text_nodes)
+      esc_text_nodes = Set.new(xml.xpath(".//esc//text()"))
+      Set.new.tap do |indices|
+        text_nodes.each_with_index do |node, i|
+          indices.add(i) if esc_text_nodes.include?(node)
+        end
+      end
     end
 
     # Cache text content once per method call to avoid repeated .text calls
