@@ -52,8 +52,11 @@ module IsoDoc
     end
 
     # Build set of indices for text nodes within <esc> tags
+    # Handles both namespaced and non-namespaced <esc> elements
     def build_esc_indices(xml, text_nodes)
-      esc_text_nodes = Set.new(xml.xpath(".//esc//text()"))
+      # Try both non-namespaced and namespace-agnostic queries
+      esc_text_nodes = Set.new(xml.xpath(".//esc//text()") +
+                               xml.xpath(".//*[local-name()='esc']//text()"))
       Set.new.tap do |indices|
         text_nodes.each_with_index do |node, i|
           indices.add(i) if esc_text_nodes.include?(node)

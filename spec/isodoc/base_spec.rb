@@ -138,6 +138,23 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "计算机代码(hello, world.)你好"
     expect(c.l10n("你好, <esc>world</esc> 世界."))
       .to be_equivalent_to "你好，world世界。"
+
+    # Test with namespaced XML (esc inside elements with xmlns)
+    input = '<semx xmlns="http://riboseinc.com/isoxml" element="source">' \
+            '<esc><origin bibitemid="ISO7301" type="inline" citeas="ISO 7301:2011">' \
+            '<locality type="clause"><referenceFrom>3.1</referenceFrom></locality>' \
+            '</origin></esc>、を一部変更し，<semx element="modification">' \
+            'The term "cargo rice" （および類似の用語） is shown as deprecated' \
+            "</semx></semx>"
+    # The <origin> content inside <esc> should not be localized
+    # The Japanese comma 、 and text outside <esc> should be localized
+    expected = '<semx xmlns="http://riboseinc.com/isoxml" element="source">' \
+               '<origin bibitemid="ISO7301" type="inline" citeas="ISO 7301:2011">' \
+               '<locality type="clause"><referenceFrom>3.1</referenceFrom></locality>' \
+               '</origin>、を一部変更し，<semx element="modification">' \
+               'The term "cargo rice" （および類似の用語） is shown as deprecated' \
+               "</semx></semx>"
+    expect(c.l10n(input)).to be_equivalent_to expected
   end
 
   it "does CJK script mixing localisation" do
