@@ -659,4 +659,44 @@ RSpec.describe IsoDoc::I18n do
     result = c.send(:self_reference_resolve, labels)
     expect(result["nested"]["array"][0]["key"]).to eq "value , here"
   end
+
+  it "switches between multiple i18n instances correctly" do
+    # Create two instances with different languages
+    # Both use the new.yaml which has inflection definitions
+    c_fr = IsoDoc::I18n.new("fr", "Latn", i18nyaml: "spec/assets/new.yaml")
+    c_en = IsoDoc::I18n.new("en", "Latn", i18nyaml: "spec/assets/new.yaml")
+
+    # Test alternating between instances using inflect filter
+    # Each instance should use its own inflection rules
+    expect(c_fr.populate("man_liquid"))
+      .to eq "virem"
+    expect(c_en.populate("man_liquid"))
+      .to eq "virem"
+
+    # Test with ordinals - French has proper ordinal support
+    expect(c_fr.populate("ordinal_num_blank_blank", { "var1" => 31 }))
+      .to eq "31e"
+    expect(c_fr.populate("ordinal_num_man_blank", { "var1" => 1 }))
+      .to eq "1er"
+
+    # Switch back and forth rapidly
+    expect(c_en.populate("woman_liquid"))
+      .to eq "mulieris"
+    expect(c_fr.populate("woman_liquid"))
+      .to eq "mulieris"
+
+    # Test ordinal words
+    expect(c_fr.populate("ordinal_word_blank_blank", { "var1" => 31 }))
+      .to eq "trente-et-unième"
+    expect(c_fr.populate("ordinal_word_woman_blank", { "var1" => 1 }))
+      .to eq "première"
+    expect(c_fr.populate("ordinal_num_woman_blank", { "var1" => 1 }))
+      .to eq "1re"
+
+    # Final check to ensure instance switching works
+    expect(c_en.populate("women_liquid"))
+      .to eq "mulierum"
+    expect(c_fr.populate("women_liquid"))
+      .to eq "mulierum"
+  end
 end

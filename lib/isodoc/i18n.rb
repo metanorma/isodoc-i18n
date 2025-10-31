@@ -27,7 +27,6 @@ module IsoDoc
     CJK_SCRIPTS = %w(Hans Hant Jpan Kore).freeze
 
     def liquid_init
-      ::IsoDoc::I18n::Liquid.set(self)
       ::Liquid::Environment.default.register_filter(::IsoDoc::I18n::Liquid)
     end
 
@@ -50,6 +49,7 @@ module IsoDoc
 
     # populate with variables, Liquid, inflections, ordinals/spellout
     def populate(keys, vars = {})
+      ::IsoDoc::I18n::Liquid.set(self)
       ::Liquid::Template.parse(@labels.dig(*Array(keys)))
         .render(vars.merge("labels" => @labels))
     end
