@@ -123,5 +123,9 @@ module IsoDoc
     def set(key, val)
       @labels[key] = val
     end
+
+    def merge(new_labels)
+      @labels = @labels.deep_merge(new_labels)
+    end
   end
 end

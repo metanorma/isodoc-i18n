@@ -11,6 +11,8 @@ RSpec.describe IsoDoc::I18n do
     expect(c.at).to eq "at"
     expect(c.language).to eq "en"
     expect(c.script).to eq "Latn"
+    expect(c.get["punct"]["period"]).to eq "."
+    expect(c.get["punct"]["comma"]).to eq ","
   end
 
   it "manipulates i18n class" do
@@ -19,6 +21,9 @@ RSpec.describe IsoDoc::I18n do
     expect(c.get["fred"]).to be_nil
     c.set("fred", "frederic")
     expect(c.get["fred"]).to eq "frederic"
+    c.merge({ "punct" => { "comma" => "X" } })
+    expect(c.get["punct"]["period"]).to eq "."
+    expect(c.get["punct"]["comma"]).to eq "X"
   end
 
   it "loads default for missing language files" do
