@@ -57,7 +57,7 @@ module IsoDoc
     ZH_PUNCT_AUTOTEXT = {
       colon: ":",
       comma: ",",
-      "enum-comma": ",",
+      # "enum-comma": ",", # enum-comma is ambiguous with comma
       semicolon: ";",
       period: ".",
       "close-paren": ")",
