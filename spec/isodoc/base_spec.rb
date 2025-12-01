@@ -77,6 +77,8 @@ RSpec.describe IsoDoc::I18n do
 
   it "does Traditional Chinese localisation" do
     c = IsoDoc::I18n.new("zh", "Hant", i18nyaml: "spec/assets/zh-Hans.yaml")
+    expect(c.l10n("&lt;&lt;a&gt;&gt;"))
+      .to be_equivalent_to "&lt;&lt;a&gt;&gt;"
     expect(c.l10n("Code (hello, world.)"))
       .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
@@ -270,6 +272,8 @@ RSpec.describe IsoDoc::I18n do
   it "does French localisation" do
     e = HTMLEntities.new
     c = IsoDoc::I18n.new("fr", "Latn")
+    expect(c.l10n("&lt;&lt;a&gt;&gt;"))
+      .to be_equivalent_to "&lt;&lt;a&gt;&gt;"
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"

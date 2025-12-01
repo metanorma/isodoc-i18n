@@ -91,7 +91,7 @@ module IsoDoc
         # Adjust index if prev context prepended
         prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
         text = cleanup_entities(n.text, is_xml: false)
-        n.replace(l10_zh1(text, prev_ctx, foll_ctx, script, options))
+        n.content = l10_zh1(text, prev_ctx, foll_ctx, script, options)
       end
       to_xml(xml) #.gsub(/<\/?em>|<\/?strong>|<\/?i>|<\/?b>/, "")
     end

@@ -98,7 +98,7 @@ module IsoDoc
 
         prev_ctx, foll_ctx = l10n_context_cached(text_cache, prev ? i + 1 : i)
         text = cleanup_entities(n.text, is_xml: false)
-        n.replace(l10n_fr1(text, prev_ctx, foll_ctx, locale))
+        n.content = l10n_fr1(text, prev_ctx, foll_ctx, locale)
       end
       to_xml(xml)
     end
