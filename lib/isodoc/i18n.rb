@@ -11,6 +11,7 @@ require "base64"
 module IsoDoc
   class I18n
     attr_accessor :labels
+    attr_reader :lang, :script, :locale
 
     def initialize(lang, script, locale: nil, i18nyaml: nil, i18nhash: nil)
       @lang = lang
