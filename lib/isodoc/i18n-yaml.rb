@@ -9,7 +9,8 @@ module IsoDoc
       ret = load_yaml1(lang, script)
       if i18nyaml
         Array(i18nyaml).compact.each do |y|
-          ret = ret.deep_merge(YAML.load_file(y))
+          File.exist?(y.to_s) and
+            ret = ret.deep_merge(YAML.load_file(y))
         end
         return postprocess(ret)
       end
