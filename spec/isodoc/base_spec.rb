@@ -82,7 +82,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("Code (hello, world.)"))
       .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
-      .to be_equivalent_to " 计算机代码（你好，世界。）"
+      .to be_equivalent_to "计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
       .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
     expect(c.l10n("3–9a, 算3–9, 壹–贰,  三–三"))
@@ -102,7 +102,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("Code (hello, world.)"))
       .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
-      .to be_equivalent_to " 计算机代码（你好，世界。）"
+      .to be_equivalent_to "计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
       .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
   end
@@ -112,7 +112,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("Code (hello, world.)"))
       .to be_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
-      .to be_equivalent_to " 计算机代码（你好，世界。）"
+      .to be_equivalent_to "计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
       .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
   end
@@ -288,13 +288,13 @@ RSpec.describe IsoDoc::I18n do
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"
     expect(c.l10n("<a>Code</a>;<a> </a><a>«</a><a>c</a>ode» and: code!"))
-      .to be_equivalent_to "<a>Code</a>&#x202f;;<a> </a><a>«&#x202f;</a><a>c</a>ode&#x202f;» and&#xa0;: code&#x202f;!"
+      .to be_equivalent_to "<a>Code</a>\u202f;<a> </a><a>«\u202f</a><a>c</a>ode\u202f» and\u00a0: code\u202f!"
     c = IsoDoc::I18n.new("fr", "Latn", locale: "CH")
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
       .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#x202f;: code&#x202f;!"
     expect(c.l10n("<a>Code</a>;<a> </a><a>«</a><a>c</a>ode» and: code!"))
-      .to be_equivalent_to "<a>Code</a>&#x202f;;<a> </a><a>«&#x202f;</a><a>c</a>ode&#x202f;» and&#x202f;: code&#x202f;!"
+      .to be_equivalent_to "<a>Code</a>\u202f;<a> </a><a>«\u202f</a><a>c</a>ode\u202f» and\u202f: code\u202f!"
     expect(e.encode(c.l10n("http://xyz a;b"), :hexadecimal))
       .to be_equivalent_to "http://xyz a;b"
   end
