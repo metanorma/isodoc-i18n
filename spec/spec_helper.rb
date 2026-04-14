@@ -6,8 +6,22 @@ end
 require "bundler/setup"
 require "isodoc-i18n"
 require "rspec/matchers"
-require  "canon"
+require "canon"
 require "equivalent-xml"
+
+Canon::Config.instance.tap do |cfg|
+  # Configure Canon to use spec-friendly match profiles
+  cfg.xml.match.profile = :spec_friendly
+  cfg.html.match.profile = :spec_friendly
+
+  # Configure Canon to show all diffs (including inactive diffs)
+  cfg.html.diff.show_diffs = :normative
+  cfg.xml.diff.show_diffs = :normative
+
+  # Enable verbose diff output for debugging
+  # cfg.html.diff.verbose_diff = true
+  # cfg.xml.diff.verbose_diff = true
+end
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
