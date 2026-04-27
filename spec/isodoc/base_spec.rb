@@ -56,6 +56,32 @@ RSpec.describe IsoDoc::I18n do
     expect(c.edition).to eq "Auflage"
   end
 
+  it "silently skips i18nyaml entries that aren't real YAML paths" do
+    binary = (+"\xff\xfe blob.yaml").force_encoding("ASCII-8BIT")
+    bad_inputs = [
+      "",
+      "some label key",
+      "multi\nline\nyaml: value",
+      "with-null\x00byte.yaml",
+      "with-tab\tin-name.yaml",
+      "no-extension",
+      "wrong.txt",
+      binary,
+      { not: "a string" },
+      42,
+    ]
+
+    bad_inputs.each do |bad|
+      expect { IsoDoc::I18n.new("en", "Latn", i18nyaml: bad) }
+        .not_to raise_error
+      mixed = ["spec/assets/new.yaml", bad]
+      c = nil
+      expect { c = IsoDoc::I18n.new("en", "Latn", i18nyaml: mixed) }
+        .not_to raise_error
+      expect(c.text).to eq "text2"
+    end
+  end
+
   it "loads language hash overrides" do
     c = IsoDoc::I18n.new("en", "Latn",
                          i18nhash: YAML.load_file("spec/assets/new.yaml"))
