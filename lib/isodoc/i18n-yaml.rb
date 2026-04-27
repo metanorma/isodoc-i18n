@@ -7,15 +7,24 @@ module IsoDoc
 
     def load_yaml(lang, script, i18nyaml = nil, i18nhash = nil)
       ret = load_yaml1(lang, script)
-      if i18nyaml
-        Array(i18nyaml).compact.each do |y|
-          File.exist?(y.to_s) and
-            ret = ret.deep_merge(YAML.load_file(y))
-        end
-        return postprocess(ret)
-      end
+      i18nyaml and return postprocess(merge_yaml_files(ret, i18nyaml))
       i18nhash and return postprocess(ret.deep_merge(i18nhash))
       postprocess(ret)
+    end
+
+    # i18nyaml entries are nominally paths, but callers sometimes pass
+    # YAML values (label keys, multi-line prose). Skip anything that
+    # plainly isn't a real file path before touching the filesystem —
+    # `File.exist?` raises on strings containing \0 (Windows + Ruby 3.2).
+    def merge_yaml_files(ret, i18nyaml)
+      Array(i18nyaml).compact.each do |y|
+        path = y.to_s
+        next if path.empty? || path.include?("\0") || path.include?("\n")
+        next unless File.file?(path)
+
+        ret = ret.deep_merge(YAML.load_file(path))
+      end
+      ret
     end
 
     def postprocess(labels)
