@@ -1,0 +1,278 @@
+= Extended date formatting in isodoc-i18n
+
+== Scope
+
+This document covers **only the extensions** introduced by
+`isodoc-i18n` on top of Ruby's standard `Date#strftime`. Specifically:
+
+- Era-year tokens (`%EY`, `%Ey`, `%EC`)
+- Alternative-numbering tokens (`%Om`, `%Od`, `%OY`, `%Oy`)
+- The legacy `%_`-as-literal-space alias kept for backwards compatibility
+
+Everything else — the full set of `%Y`, `%m`, `%d`, `%H`, `%M`, `%S`,
+`%F`, `%T`, `%j`, `%U`, `%W`, `%Z`, `%z`, etc. — is plain Ruby
+`Date#strftime` and is documented at
+https://docs.ruby-lang.org/en/master/strftime_formatting_rdoc.html.
+Read that page first; this document is the *delta*.
+
+The localised name directives (`%B`, `%b`, `%h`, `%A`, `%a`, `%P`,
+`%p`, including their `%^B` etc. uppercase variants) are also part of
+Ruby's standard strftime, but `isodoc-i18n` reroutes them through CLDR
+locale data so the names come out in the configured `lang`/`script`
+rather than in Ruby's hard-coded English. The rerouting is byte-identical
+in surface — the *tokens* are unchanged from Ruby — so it is
+documented in the *Localised names* section below as a pointer rather
+than a re-specification.
+
+
+== Background and dependencies
+
+=== twitter_cldr
+
+`twitter_cldr` is the Ruby port of the
+https://cldr.unicode.org/[Unicode Common Locale Data Repository (CLDR)] — the canonical
+multilingual data set for month names, day names, period markers
+(am/pm), spell-out numbering rules, and so on. Anything in this
+formatter that depends on a locale (the localised-name directives,
+the `spellout` numbering system, the `hanidec`-friendly digit table)
+is ultimately a query against CLDR through twitter_cldr. Repository
+and API docs: https://github.com/twitter/twitter-cldr-rb.
+
+=== japanese_calendar
+
+`japanese_calendar` is a small Ruby gem that adds `Date#era_year` and
+the `%JN`/`%Jy`/`%JH` strftime tokens for the Japanese era
+(*gengō*) calendar. Used by the formatter for `cal=japanese`.
+Repository: https://github.com/junmt/japanese_calendar.
+
+=== POSIX `%E*` / `%O*` modifier convention
+
+The token namespace `%E[YyC]` and `%O[mdYy]` is borrowed from POSIX
+strftime, where `%E` introduces *alternative era representation* and
+`%O` introduces *alternative numeric symbols* for a directive. POSIX
+itself only defines the modifier prefixes; the actual era and
+numbering data is locale-driven. The richest documented expansion is
+GNU strftime, mirrored in Perl as
+https://metacpan.org/dist/POSIX-strftime-GNU[`POSIX::strftime::GNU`]; we follow its intent in
+spirit. Ruby's own `Date#strftime` accepts `%E`/`%O` but treats them
+as no-ops (passing through to the unmodified directive) — claiming
+this surface for actual era/numbering behaviour is the central
+extension here.
+
+=== "Era", concretely
+
+An *era* in this context is a regnal or calendar epoch named by a
+character or short label, with a year count that resets at the start
+of each new epoch. The Japanese calendar is the canonical example
+in metanorma's user base: 令和 (Reiwa, started 2019-05-01), 平成
+(Heisei, 1989-2019), 昭和 (Shōwa, 1926-1989), and so on. Year 6 of
+Reiwa (`令和6`) is calendar-year 2024. The era handler also
+accommodates the Republic of China (Minguo) and Thai Buddhist
+calendars conceptually, where the "era" is a single perpetual count
+that doesn't reset (Minguo year = Gregorian − 1911; Buddhist year =
+Gregorian + 543) — see *Calendar dispatch* below for the current
+wiring status.
+
+
+== Quick reference
+
+[source,ruby]
+----
+require "isodoc-i18n"
+
+f = IsoDoc::ExtendedDateFormatter.new(lang: "ja", script: "Jpan")
+
+f.format("2024-09-30", "%EY年%-m月%-d日")
+# => "令和6年9月30日"
+
+f.format("2024-09-30", "%EY{spellout}年%Om{spellout}月%Od{spellout}日")
+# => "令和六年九月三十日"
+
+g = IsoDoc::ExtendedDateFormatter.new(lang: "en", script: "Latn")
+
+g.format("2024-09-30", "%-d.%Om{roman}.%Y")
+# => "30.IX.2024"
+
+g.format("2024-09-30", "%-d %B %Y")
+# => "30 September 2024"
+----
+
+`format` accepts an ISO-8601 string, a `Date`, a `DateTime`, or a
+`Time` as the first argument.
+
+
+== Token reference
+
+=== Era year — `%EY`, `%Ey`, `%EC`
+
+[cols="1,3"]
+|===
+| Token | Meaning
+
+| `%EY` | Era name + era year (e.g. `令和6` for 2024-09-30 in `cal=japanese`)
+| `%Ey` | Era year only (e.g. `6`)
+| `%EC` | Era name only (e.g. `令和`)
+|===
+
+The argument block selects the numbering system used to render the
+year, and (optionally) the calendar:
+
+[source]
+----
+%EY{numeric}            # 令和6     (default)
+%EY{spellout}           # 令和六
+%EY{cal=japanese}       # 令和6
+%EY{spellout, cal=japanese}
+----
+
+The default calendar is `japanese` when `lang: "ja"`, otherwise
+`gregorian`. Under `cal=gregorian`, `%EY` collapses to the four-digit
+year, `%Ey` to the two-digit year, and `%EC` to an empty string —
+the era surface degrades cleanly for locales without an era
+convention.
+
+For pre-Meiji dates (before 1868), `japanese_calendar.era_year`
+raises; the formatter catches this and falls back to the plain
+Gregorian year.
+
+=== Alternative numbering — `%Om`, `%Od`, `%OY`, `%Oy`
+
+[cols="1,3"]
+|===
+| Token | Meaning
+
+| `%Om` | Month rendered in an alternative numbering system
+| `%Od` | Day rendered in an alternative numbering system
+| `%OY` | Four-digit year in an alternative numbering system
+| `%Oy` | Two-digit year in an alternative numbering system
+|===
+
+The argument block names the numbering system. Supported values:
+
+[cols="1,2,3"]
+|===
+| Keyword | Behaviour | Example for 30
+
+| `numeric` (default) | Latin digits | `30`
+| `latn` | Alias for `numeric` | `30`
+| `spellout` | CLDR `spellout-cardinal` rules in `lang` | `三十` (ja)
+| `hanidec` | Han decimal digits, digit-for-digit | `三〇`
+| `roman` | Roman numerals, uppercase | `XXX`
+| `roman-lower` | Roman numerals, lowercase | `xxx`
+|===
+
+`spellout` and `hanidec` are visually similar for single-digit
+numbers but diverge above 9: `spellout` produces positional kanji
+(`三十` for 30) while `hanidec` is digit-for-digit substitution
+(`三〇`). Pick based on which output the document style requires.
+
+`roman` and `roman-lower` ignore `lang` — the digits are
+language-independent. They are intended for Continental European
+bibliographic styles such as `30.IX.2024` and standards documents
+that quote dates with Roman months as a typographic convention.
+
+=== Localised names — `%B`, `%b`, `%h`, `%A`, `%a`, `%P`, `%p`
+
+These are standard Ruby strftime tokens — see the canonical Ruby
+reference at
+https://docs.ruby-lang.org/en/master/strftime_formatting_rdoc.html.
+`isodoc-i18n` does not change their syntax; it changes their
+*output* by reading the localised month/day/period names from CLDR
+via `twitter_cldr` for the configured `lang`/`script`. The CLDR data
+keys consulted are
+`calendar_data[:months][:format][:wide|:abbreviated]`,
+`calendar_data[:days][:format][:wide|:abbreviated]`, and
+`periods[:am|:pm]`; see the twitter_cldr README at
+https://github.com/twitter/twitter-cldr-rb#calendars-amp-dates for
+the underlying API.
+
+`%^B`, `%^A`, etc. uppercase the localised result. Behaviour is
+byte-identical to the previous `IsoDoc::I18n#date` implementation,
+so existing format strings such as `%-d %B %Y` continue to produce
+the same output.
+
+=== Legacy — `%_`
+
+`%_` is treated as a literal space, preserving the legacy
+`IsoDoc::I18n#date` convention. Note that this overrides Ruby's
+POSIX `%_` flag (which means "space-pad the next directive"); kept
+for backwards compatibility with existing metanorma format strings.
+
+=== Calendar dispatch (extension surface)
+
+The `cal=` argument is a CLDR calendar identifier. Two calendars are
+wired up today:
+
+[cols="1,3"]
+|===
+| Calendar | Status
+
+| `gregorian` | Default for non-Japanese locales. Era tokens degrade as described above.
+| `japanese` | Default for `lang: "ja"`. Backed by `japanese_calendar`.
+|===
+
+The following identifiers are reserved as extension points and raise
+`NotImplementedError` today, with a clear message naming the
+supported set:
+
+`roc`, `buddhist`, `persian`, `islamic`, `indian`, `hebrew`.
+
+These map to CLDR data already shipped by `twitter_cldr`. They are
+documented as future-friendly entry points so user code can be
+written against the eventual API; wiring is a configuration matter,
+not a research project, and will be added on demand.
+
+
+== Comparison of alternatives
+
+When `isodoc-i18n` doesn't fit, these are the gems and standards that
+cover adjacent surface area:
+
+[cols="2,3,3"]
+|===
+| Resource | Scope | Limitation relative to isodoc-i18n
+
+| https://github.com/twitter/twitter-cldr-rb[`twitter_cldr`]
+| CLDR locale data; CLDR-skeleton formatting (`to_additional_s`); spell-out numbering (`to_rbnf_s`)
+| No POSIX `%E*`/`%O*` surface; alternative numbering systems not exposed cleanly per date component
+
+| https://github.com/junmt/japanese_calendar[`japanese_calendar`]
+| `Date#era_year` plus `%JN`/`%Jy`/`%JH` strftime tokens
+| Japan-only; no alternative numbering for the regnal year (we layer twitter_cldr on top)
+
+| https://github.com/sho-h/era_ja[`era_ja`]
+| Like `japanese_calendar`, plus `%K` for the "元年" first-year convention
+| Japan-only; standalone — would duplicate `japanese_calendar`'s surface
+
+| https://github.com/ffi/ffi-icu[`ffi-icu`]
+| Full ICU bindings: native era, numbering systems, locale-aware everything
+| Requires `libicu` system dependency; steep API; heavyweight if you only need date formatting
+
+| https://github.com/ruby-i18n/ruby-cldr[`ruby-cldr`]
+| CLDR data export
+| Data only, no formatting API
+
+| https://metacpan.org/dist/POSIX-strftime-GNU[`POSIX::strftime::GNU` (Perl)]
+| Reference implementation of GNU strftime `%E*`/`%O*` modifiers
+| Perl only; no Ruby port — used here as a design reference
+
+| https://rubygems.org/gems/roman-numerals[`roman-numerals`]
+| Roman numeral conversion
+| No date-formatting surface; isodoc-i18n wraps it for `%Om{roman}`
+
+| https://shopify.github.io/liquid/filters/date[Liquid `date` filter]
+| Vanilla Ruby strftime in Liquid templates
+| No locale, no era, no Roman; a Liquid filter built on this formatter is the wrapper that adds those
+
+| https://liquidjs.com/filters/date.html[LiquidJS `date_to_xmlschema` / `date`]
+| Liquid for JavaScript runtimes; adds `%q` ordinal
+| No era, no alternative numbering; not relevant to a Ruby pipeline but listed for completeness
+
+| https://cldr.unicode.org/[CLDR]
+| The data source `twitter_cldr` re-exposes
+| Data spec, not a formatting API
+
+| https://unicode-org.github.io/icu/[ICU]
+| C/C++ implementation behind `ffi-icu`
+| C library, requires bindings
+|===

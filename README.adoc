@@ -7,4 +7,49 @@ image:https://img.shields.io/github/issues-pr-raw/metanorma/isodoc-i18n.svg["Pul
 image:https://img.shields.io/github/commits-since/metanorma/isodoc-i18n/latest.svg["Commits since latest",link="https://github.com/metanorma/isodoc-i18n/releases"]
 
 
-Internationalisation for Metanorma rendering
+Internationalisation for Metanorma rendering.
+
+`isodoc-i18n` is the shared i18n/l10n base layer used across the
+metanorma flavours. It provides:
+
+* **YAML-driven locale labels** (`IsoDoc::I18n#labels`, `populate`) —
+  per-language label sets loaded from i18n YAML, with cross-file
+  references and Liquid template interpolation.
+* **CLDR-backed l10n of punctuation and spacing** (`#l10n`) — CJK
+  contextual half-width/full-width punctuation, French spacing rules,
+  bidi wrapping for RTL scripts.
+* **Grammatical inflection and ordinals** (`#inflect`, `#inflect_ordinal`)
+  — number/case/gender/person inflection driven by per-language YAML
+  inflection tables, plus CLDR `OrdinalRules` and `SpelloutRules`
+  formatting.
+* **Liquid filter integration** (`IsoDoc::I18n::Liquid`) —
+  `inflect`, `ordinal_num`, `ordinal_word`, etc. registered globally
+  on `Liquid::Environment.default` for use in metanorma templates.
+* **Boolean conjunction list rendering** (`#boolean_conj`) —
+  locale-correct "A, B, and C"-style joins.
+* **Extended date formatting** (`IsoDoc::I18n#date`,
+  `IsoDoc::ExtendedDateFormatter`) — see below.
+
+== Extended date formatting
+
+`isodoc-i18n` ships an extended `strftime`-style date formatter,
+`IsoDoc::ExtendedDateFormatter`, that adds POSIX-flavoured era and
+alternative-numbering surfaces (Japanese era years, kanji spell-out,
+Han digits, Roman months) on top of Ruby's `Date#strftime`. It is the
+engine behind `IsoDoc::I18n#date` and metanorma's
+`<date value="…" format="…"/>` element, and can also be used standalone:
+
+[source,ruby]
+----
+require "isodoc-i18n"
+
+f = IsoDoc::ExtendedDateFormatter.new(lang: "ja", script: "Jpan")
+f.format("2024-09-30", "%EY年%-m月%-d日")        # => "令和6年9月30日"
+
+g = IsoDoc::ExtendedDateFormatter.new(lang: "en", script: "Latn")
+g.format("2024-09-30", "%-d.%Om{roman}.%Y")      # => "30.IX.2024"
+----
+
+Full token reference, calendar dispatch rules, and a comparison with
+`twitter_cldr`, `japanese_calendar`, `ffi-icu`, and other adjacent
+tooling: link:docs/extended-date-format.adoc[`docs/extended-date-format.adoc`].
