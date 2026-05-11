@@ -24,6 +24,20 @@ ordinal_num_blank_nsg: "{{ var1 | ordinal_num: '', 'gender:f,number:pl' }}"
 ordinal_word_blank_nsg: "{{ var1 | ordinal_word: '', 'gender:f,number:pl' }}"
 ordinal_num_masc_pl: "{{ var1 | ordinal_num: 'man', 'number:pl' }}"
 ordinal_word_masc_pl: "{{ var1 | ordinal_word: 'man', 'number:pl' }}"
+# Format strings with %E*{…}/%O*{…} tokens cannot be inlined as Liquid literals
+# (the braces clash with Liquid's `{{...}}` parser). Store them as YAML data
+# and reference via labels.<key> in the template — this is the realistic
+# usage pattern in flavour gems.
+fmt_roman_month: "%-d.%Om{roman}.%Y"
+fmt_ja_arabic: "%EY{numeric}年%-m月%-d日"
+fmt_ja_spellout: "%EY{spellout}年%Om{spellout}月%Od{spellout}日"
+date_i18n_plain: "{{ var1 | date_i18n: '%Y-%m-%d' }}"
+date_i18n_long_en: "{{ var1 | date_i18n: '%-d %B %Y' }}"
+date_i18n_roman_month: "{{ var1 | date_i18n: labels.fmt_roman_month }}"
+date_i18n_ja_arabic: "{{ var1 | date_i18n: labels.fmt_ja_arabic, 'ja' }}"
+date_i18n_ja_spellout: "{{ var1 | date_i18n: labels.fmt_ja_spellout, 'ja' }}"
+date_i18n_calendar_override: "{{ var1 | date_i18n: labels.fmt_ja_arabic, 'ja', 'japanese' }}"
+date_i18n_empty: "[{{ var1 | date_i18n: '%Y-%m-%d' }}]"
 multiple_and: "%1<conn>與</conn>%2"
 ordinal_keys: [gender,number]
 SpelloutRules:

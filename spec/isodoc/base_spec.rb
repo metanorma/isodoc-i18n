@@ -559,6 +559,25 @@ RSpec.describe IsoDoc::I18n do
       .to eq "premiers"
   end
 
+  it "uses Liquid date_i18n filter" do
+    c = IsoDoc::I18n.new("en", "Latn", i18nyaml: "spec/assets/new.yaml")
+    d = { "var1" => "2024-09-30" }
+    expect(c.populate("date_i18n_plain", d))
+      .to eq "2024-09-30"
+    expect(c.populate("date_i18n_long_en", d))
+      .to eq "30 September 2024"
+    expect(c.populate("date_i18n_roman_month", d))
+      .to eq "30.IX.2024"
+    expect(c.populate("date_i18n_ja_arabic", d))
+      .to eq "令和6年9月30日"
+    expect(c.populate("date_i18n_ja_spellout", d))
+      .to eq "令和六年九月三十日"
+    expect(c.populate("date_i18n_calendar_override", d))
+      .to eq "令和6年9月30日"
+    expect(c.populate("date_i18n_empty", {}))
+      .to eq "[]"
+  end
+
   it "resolves self-references with bracket notation" do
     labels = {
       "punct" => { "enum-comma" => "," },
