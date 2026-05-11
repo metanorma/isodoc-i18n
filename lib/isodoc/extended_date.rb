@@ -50,7 +50,8 @@ module IsoDoc
     # nil, in which case the input is returned unchanged for that arity.
     # Used by metanorma-flavour metadata helpers to delegate their
     # arity-branching logic instead of duplicating it per gem.
-    def self.format_iso_date(isodate, year:, year_month:, full:, **opts)
+    def self.format_iso_date(isodate, year: nil, year_month: nil, full: nil,
+                             **opts)
       normalized, fmt = iso_normalize(isodate, [year, year_month, full])
       return isodate if fmt.nil?
 
