@@ -6,10 +6,15 @@ module IsoDoc
   #
   # Adds three POSIX-flavoured surfaces:
   #
-  #   %E[YyC](?:\{ARGS\})?  - era year (calendar-aware)
-  #   %O[mdYy](?:\{ARGS\})? - alternative numbering for date components
-  #   %_                    - legacy alias for a literal space (kept for
-  #                           backwards compatibility with IsoDoc::I18n#date)
+  #   %E[YyC]              - era year (calendar-aware)
+  #   %O[mdYy]             - alternative numbering for date components
+  #   %_                   - legacy alias for a literal space (kept for
+  #                          backwards compatibility with IsoDoc::I18n#date)
+  #
+  # Optional square-bracket-delimited ARGS may follow the conversion letter
+  # for %E* and %O* tokens (e.g. +%EY[numeric]+, +%Om[roman]+).
+  # Square brackets rather than braces, so format strings remain safe to
+  # inline inside Liquid +{{...}}+ templates.
   #
   # The localised name directives (%B, %b, %h, %A, %a, %P, %p) are also
   # routed through the formatter so they pick up CLDR locale data without
@@ -25,8 +30,8 @@ module IsoDoc
     TOKEN_RX = /
       %_                                  |
       %\^?[BbhPpAa]                       |
-      %E[YyC](?:\{[^}]*\})?               |
-      %O[mdYy](?:\{[^}]*\})?
+      %E[YyC](?:\[[^\]]*\])?              |
+      %O[mdYy](?:\[[^\]]*\])?
     /x.freeze
 
     DAY_KEYS = %i[sun mon tue wed thu fri sat].freeze
@@ -90,10 +95,10 @@ module IsoDoc
       when /\A%(\^?)([BbhPpAa])\z/
         render_localised_name(time, Regexp.last_match(1) == "^",
                               Regexp.last_match(2))
-      when /\A%E([YyC])(?:\{([^}]*)\})?\z/
+      when /\A%E([YyC])(?:\[([^\]]*)\])?\z/
         render_era(time, Regexp.last_match(1),
                    parse_args(Regexp.last_match(2)))
-      when /\A%O([mdYy])(?:\{([^}]*)\})?\z/
+      when /\A%O([mdYy])(?:\[([^\]]*)\])?\z/
         render_alt_num(time, Regexp.last_match(1),
                        parse_args(Regexp.last_match(2)))
       end

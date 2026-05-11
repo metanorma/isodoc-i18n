@@ -35,7 +35,7 @@ module IsoDoc
       end
 
       # value | date_i18n: fmt[, lang[, calendar]]
-      # e.g. "2024-09-30" | date_i18n: "%EY{numeric}年%-m月%-d日", "ja"
+      # e.g. "2024-09-30" | date_i18n: "%EY[numeric]年%-m月%-d日", "ja"
       # lang defaults to the i18n instance's lang; calendar to language default.
       def date_i18n(value, fmt, lang = nil, calendar = nil)
         return value if value.nil? || value.to_s.empty?
