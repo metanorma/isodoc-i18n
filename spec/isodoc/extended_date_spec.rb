@@ -59,18 +59,18 @@ RSpec.describe IsoDoc::ExtendedDateFormatter do
       expect(f.format("2024-09-30", "%EY年%-m月%-d日")).to eq "令和6年9月30日"
     end
 
-    it "renders %EY{spellout} with kanji era year (legacy JIS shape)" do
+    it "renders %EY[spellout] with kanji era year (legacy JIS shape)" do
       # Positional kanji throughout (六, 九, 三十) — matches the legacy JIS
       # `gsub(/(\d+)/) { |n| n.to_rbnf_s(SpelloutRules, spellout-cardinal) }`
       # post-processor.
       expect(f.format("2024-09-30",
-                      "%EY{spellout}年%Om{spellout}月%Od{spellout}日"))
+                      "%EY[spellout]年%Om[spellout]月%Od[spellout]日"))
         .to eq "令和六年九月三十日"
     end
 
     it "renders %Ey alone as the era year only" do
       expect(f.format("2024-09-30", "%Ey")).to eq "6"
-      expect(f.format("2024-09-30", "%Ey{spellout}")).to eq "六"
+      expect(f.format("2024-09-30", "%Ey[spellout]")).to eq "六"
     end
 
     it "renders %EC as the era name only" do
@@ -86,25 +86,25 @@ RSpec.describe IsoDoc::ExtendedDateFormatter do
   describe "alternative numbering (%Om / %Od / %OY / %Oy)" do
     it "renders Roman months for Continental bibliographic style" do
       f = described_class.new(lang: "en", script: "Latn")
-      expect(f.format("2024-09-30", "%-d.%Om{roman}.%Y")).to eq "30.IX.2024"
+      expect(f.format("2024-09-30", "%-d.%Om[roman].%Y")).to eq "30.IX.2024"
       expect(f.format("2024-09-30",
-                      "%-d.%Om{roman-lower}.%Y")).to eq "30.ix.2024"
+                      "%-d.%Om[roman-lower].%Y")).to eq "30.ix.2024"
     end
 
     it "renders hanidec digits for ja month/day" do
       f = described_class.new(lang: "ja", script: "Jpan")
-      expect(f.format("2024-09-30", "%Om{hanidec}月%Od{hanidec}日"))
+      expect(f.format("2024-09-30", "%Om[hanidec]月%Od[hanidec]日"))
         .to eq "九月三〇日"
     end
 
     it "renders spellout numbering for ja year-of-era" do
       f = described_class.new(lang: "ja", script: "Jpan")
-      expect(f.format("2024-09-30", "%Oy{spellout}")).to eq "二十四"
+      expect(f.format("2024-09-30", "%Oy[spellout]")).to eq "二十四"
     end
 
     it "rejects unknown numbering systems with a clear message" do
       f = described_class.new(lang: "en", script: "Latn")
-      expect { f.format("2024-09-30", "%Om{klingon}") }
+      expect { f.format("2024-09-30", "%Om[klingon]") }
         .to raise_error(ArgumentError, /numbering system/)
     end
   end
@@ -112,9 +112,9 @@ RSpec.describe IsoDoc::ExtendedDateFormatter do
   describe "calendar dispatch" do
     it "raises NotImplementedError for documented-but-unwired calendars" do
       f = described_class.new(lang: "en", script: "Latn")
-      expect { f.format("2024-09-30", "%EY{cal=roc}") }
+      expect { f.format("2024-09-30", "%EY[cal=roc]") }
         .to raise_error(NotImplementedError, /calendar :roc/)
-      expect { f.format("2024-09-30", "%EY{cal=buddhist}") }
+      expect { f.format("2024-09-30", "%EY[cal=buddhist]") }
         .to raise_error(NotImplementedError, /:buddhist/)
     end
 

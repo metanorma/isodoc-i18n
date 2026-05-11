@@ -33,6 +33,22 @@ module IsoDoc
         grammar = h.merge(parse_hash(infl, symbol: false))
         @@i18n.inflect_ordinal(num.to_i, grammar, "SpelloutRules")
       end
+
+      # value | date_i18n: fmt[, lang[, calendar]]
+      # e.g. "2024-09-30" | date_i18n: "%EY[numeric]年%-m月%-d日", "ja"
+      # lang defaults to the i18n instance's lang; calendar to language default.
+      def date_i18n(value, fmt, lang = nil, calendar = nil)
+        return value if value.nil? || value.to_s.empty?
+
+        IsoDoc::ExtendedDateFormatter.format(
+          value, fmt,
+          lang: lang || @@i18n.lang,
+          script: lang ? nil : @@i18n.script,
+          calendar: calendar
+        )
+      rescue StandardError
+        value
+      end
     end
   end
 end
