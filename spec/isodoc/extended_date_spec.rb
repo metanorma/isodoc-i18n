@@ -125,4 +125,53 @@ RSpec.describe IsoDoc::ExtendedDateFormatter do
       expect(f.format("2024-09-30", "%EC")).to eq ""
     end
   end
+
+  describe "format_iso_date convenience wrapper" do
+    let(:fmts) { { year: "%Y", year_month: "%B %Y", full: "%d %B %Y" } }
+
+    it "picks the year-only format for a four-digit input" do
+      expect(described_class.format_iso_date("2024", lang: "en", **fmts))
+        .to eq "2024"
+    end
+
+    it "picks the year-month format for a YYYY-MM input" do
+      expect(described_class.format_iso_date("2024-09", lang: "en", **fmts))
+        .to eq "September 2024"
+    end
+
+    it "picks the full format for a YYYY-MM-DD input" do
+      expect(described_class.format_iso_date("2024-09-30", lang: "en", **fmts))
+        .to eq "30 September 2024"
+    end
+
+    it "returns the input unchanged for nil and empty strings" do
+      expect(described_class.format_iso_date(nil, lang: "en", **fmts))
+        .to be_nil
+      expect(described_class.format_iso_date("", lang: "en", **fmts))
+        .to eq ""
+    end
+
+    it "returns the input unchanged when the matching format is nil" do
+      out = described_class.format_iso_date(
+        "2024",
+        lang: "en",
+        year: nil,
+        year_month: "%B %Y",
+        full: "%d %B %Y",
+      )
+      expect(out).to eq "2024"
+    end
+
+    it "passes through script and calendar options to the formatter" do
+      out = described_class.format_iso_date(
+        "2024-09-30",
+        lang: "ja",
+        calendar: "japanese",
+        year: nil,
+        year_month: nil,
+        full: "%EY[numeric]年%-m月%-d日",
+      )
+      expect(out).to eq "令和6年9月30日"
+    end
+  end
 end
