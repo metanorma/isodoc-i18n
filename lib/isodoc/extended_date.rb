@@ -44,6 +44,30 @@ module IsoDoc
       new(**opts).format(value, fmt)
     end
 
+    # Convenience wrapper for ISO 8601 date strings of variable arity
+    # (year-only, year-month, or full date). Picks one of three format
+    # strings keyed by the arity of the input. Each format string may be
+    # nil, in which case the input is returned unchanged for that arity.
+    # Used by metanorma-flavour metadata helpers to delegate their
+    # arity-branching logic instead of duplicating it per gem.
+    def self.format_iso_date(isodate, year: nil, year_month: nil, full: nil,
+                             **opts)
+      normalized, fmt = iso_normalize(isodate, [year, year_month, full])
+      return isodate if fmt.nil?
+
+      format(normalized, fmt, **opts)
+    rescue StandardError
+      isodate
+    end
+
+    def self.iso_normalize(isodate, fmts)
+      return [isodate, nil] if isodate.nil? || isodate.to_s.empty?
+
+      parts = isodate.to_s.split("-")
+      fmt = fmts[parts.size - 1] or return [isodate, nil]
+      [[parts[0], parts[1] || "01", parts[2] || "01"].join("-"), fmt]
+    end
+
     attr_reader :lang, :script
 
     def initialize(lang:, script: nil, calendar: nil, calendar_en: nil)
