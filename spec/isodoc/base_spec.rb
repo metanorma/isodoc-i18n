@@ -56,6 +56,32 @@ RSpec.describe IsoDoc::I18n do
     expect(c.edition).to eq "Auflage"
   end
 
+  it "silently skips i18nyaml entries that aren't real YAML paths" do
+    binary = (+"\xff\xfe blob.yaml").force_encoding("ASCII-8BIT")
+    bad_inputs = [
+      "",
+      "some label key",
+      "multi\nline\nyaml: value",
+      "with-null\x00byte.yaml",
+      "with-tab\tin-name.yaml",
+      "no-extension",
+      "wrong.txt",
+      binary,
+      { not: "a string" },
+      42,
+    ]
+
+    bad_inputs.each do |bad|
+      expect { IsoDoc::I18n.new("en", "Latn", i18nyaml: bad) }
+        .not_to raise_error
+      mixed = ["spec/assets/new.yaml", bad]
+      c = nil
+      expect { c = IsoDoc::I18n.new("en", "Latn", i18nyaml: mixed) }
+        .not_to raise_error
+      expect(c.text).to eq "text2"
+    end
+  end
+
   it "loads language hash overrides" do
     c = IsoDoc::I18n.new("en", "Latn",
                          i18nhash: YAML.load_file("spec/assets/new.yaml"))
@@ -531,6 +557,25 @@ RSpec.describe IsoDoc::I18n do
       .to eq "1ers"
     expect(c.populate("ordinal_word_masc_pl", { "var1" => 1 }))
       .to eq "premiers"
+  end
+
+  it "uses Liquid date_i18n filter" do
+    c = IsoDoc::I18n.new("en", "Latn", i18nyaml: "spec/assets/new.yaml")
+    d = { "var1" => "2024-09-30" }
+    expect(c.populate("date_i18n_plain", d))
+      .to eq "2024-09-30"
+    expect(c.populate("date_i18n_long_en", d))
+      .to eq "30 September 2024"
+    expect(c.populate("date_i18n_roman_month", d))
+      .to eq "30.IX.2024"
+    expect(c.populate("date_i18n_ja_arabic", d))
+      .to eq "令和6年9月30日"
+    expect(c.populate("date_i18n_ja_spellout", d))
+      .to eq "令和六年九月三十日"
+    expect(c.populate("date_i18n_calendar_override", d))
+      .to eq "令和6年9月30日"
+    expect(c.populate("date_i18n_empty", {}))
+      .to eq "[]"
   end
 
   it "resolves self-references with bracket notation" do

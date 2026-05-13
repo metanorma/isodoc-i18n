@@ -20,12 +20,14 @@ Gem::Specification.new do |spec|
     f.match(%r{^(test|spec|features|bin|.github)/}) \
     || f.match(%r{Rakefile|bin/rspec})
   end
-  spec.required_ruby_version = Gem::Requirement.new(">= 2.7.0")
+  spec.required_ruby_version = Gem::Requirement.new(">= 3.2.0")
 
   spec.add_dependency "base64"
   spec.add_dependency "htmlentities", "~> 4.3.4"
+  spec.add_dependency "japanese_calendar"
   spec.add_dependency "liquid", "~> 5"
   spec.add_dependency "metanorma-utils", ">= 1.7.0"
+  spec.add_dependency "roman-numerals"
   spec.add_dependency "twitter_cldr"
 
   spec.add_development_dependency "canon"

@@ -7,15 +7,43 @@ module IsoDoc
 
     def load_yaml(lang, script, i18nyaml = nil, i18nhash = nil)
       ret = load_yaml1(lang, script)
-      if i18nyaml
-        Array(i18nyaml).compact.each do |y|
-          File.exist?(y.to_s) and
-            ret = ret.deep_merge(YAML.load_file(y))
-        end
-        return postprocess(ret)
-      end
+      i18nyaml and return postprocess(merge_yaml_files(ret, i18nyaml))
       i18nhash and return postprocess(ret.deep_merge(i18nhash))
       postprocess(ret)
+    end
+
+    # i18nyaml entries are nominally paths, but callers sometimes pass
+    # YAML values (label keys, multi-line prose). The gate must be strict:
+    # Windows + Ruby 3.2, when File.file? raises on a malformed path inside
+    # a worker-pool thread, hits the unrescuable CRuby `[BUG] during_gc != 0`
+    # crash. So we only call File.file? on strings that genuinely look like
+    # a YAML path, and even then catch any StandardError as a final belt.
+    def merge_yaml_files(ret, i18nyaml)
+      Array(i18nyaml).compact.each do |y|
+        next unless path_like?(y)
+        next unless safe_file?(y)
+
+        ret = ret.deep_merge(YAML.load_file(y))
+      end
+      ret
+    end
+
+    def path_like?(entry)
+      return false unless entry.is_a?(String)
+      return false unless entry.match?(/\.ya?ml\z/i)
+
+      str = entry.dup.force_encoding("UTF-8")
+      return false if str.empty?
+      return false unless str.valid_encoding?
+      return false if str.match?(/[\x00-\x1f\x7f]/)
+
+      true
+    end
+
+    def safe_file?(path)
+      File.file?(path)
+    rescue StandardError
+      false
     end
 
     def postprocess(labels)
