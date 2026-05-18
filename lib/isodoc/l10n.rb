@@ -41,6 +41,7 @@ module IsoDoc
 
     def l10n_prep(text, options)
       xml = Nokogiri::XML::DocumentFragment.parse(text)
+      wrap_tt_children_in_esc(xml)
       t = xml.xpath(".//text()").reject { |node| node.text.empty? }
       text_cache = build_text_cache(t, options[:prev], options[:foll])
 
@@ -49,6 +50,19 @@ module IsoDoc
       esc_indices = build_esc_indices(xml, t)
 
       [t, text_cache, xml, options[:prev], options[:foll], esc_indices]
+    end
+
+    # <tt> is an inline code element whose content is by definition Latin /
+    # literal — it must not undergo punctuation localisation. Wrap its
+    # children in <esc> so build_esc_indices skips them; the trailing
+    # <esc>-strip in l10n removes the wrapper afterwards.
+    def wrap_tt_children_in_esc(xml)
+      xml.xpath(".//tt | .//*[local-name()='tt']").each do |tt|
+        next if tt.children.empty?
+        next if tt.children.all? { |c| c.element? && c.name == "esc" }
+
+        tt.inner_html = "<esc>#{tt.inner_html}</esc>"
+      end
     end
 
     # Build set of indices for text nodes within <esc> tags

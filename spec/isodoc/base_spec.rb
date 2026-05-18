@@ -191,6 +191,38 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n(input)).to be_equivalent_to expected
   end
 
+  it "skips punctuation localisation inside <tt> (auto-wraps in <esc>)" do
+    # Regression: https://github.com/metanorma/mn-samples-plateau/issues/530
+    # In a `ja` document, the Latin colon inside `<tt>gml:id</tt>` was being
+    # converted to the fullwidth `：` by `l10n_zh_punct`, because `<tt>`
+    # content was walked as ordinary text. `<tt>` is by definition a
+    # literal/code inline span; its children must be skipped by l10n.
+    c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
+
+    # Colon inside <tt> is preserved (the bug case), even though the
+    # surrounding Japanese context would otherwise license conversion.
+    # Surrounding caption-delim colon is still allowed to localise.
+    expect(c.l10n("留意事項 2: <tt>gml:id</tt>の付与ルール"))
+      .to be_equivalent_to "留意事項2： <tt>gml:id</tt>の付与ルール"
+
+    # Other Latin punctuation inside <tt> is likewise preserved.
+    expect(c.l10n("see <tt>foo, bar; baz.</tt> 説明"))
+      .to be_equivalent_to "see <tt>foo, bar; baz.</tt> 説明"
+
+    # <tt> with nested markup: inner markup and inner Latin colon both kept.
+    expect(c.l10n("<tt>a<u>b:c</u>d</tt>"))
+      .to be_equivalent_to "<tt>a<u>b:c</u>d</tt>"
+
+    # Pre-existing <esc> inside <tt> is idempotent — no double-wrap, no leak.
+    expect(c.l10n("<tt><esc>gml:id</esc></tt>"))
+      .to be_equivalent_to "<tt>gml:id</tt>"
+
+    # French: same protection, since l10n_fr shares l10n_prep.
+    c_fr = IsoDoc::I18n.new("fr", "Latn")
+    expect(c_fr.l10n("voir <tt>gml:id</tt> ici"))
+      .to be_equivalent_to "voir <tt>gml:id</tt> ici"
+  end
+
   it "does CJK script mixing localisation" do
     c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("计算机代码： Japan"))
