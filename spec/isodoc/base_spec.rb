@@ -242,7 +242,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("123 计算机代码"))
       .to be_equivalent_to "123 计算机代码"
     expect(c.l10n("版本 2.0 发布"))
-      .to be_equivalent_to "版本2。0 发布"
+      .to be_equivalent_to "版本2.0 发布" # decimals keep the ASCII period
     expect(c.l10n("1,"))
       .to be_equivalent_to "1，"
 
@@ -300,7 +300,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.l10n("123 计算机代码"))
       .to be_equivalent_to "123$计算机代码"
     expect(c.l10n("版本 2.0 发布"))
-      .to be_equivalent_to "版本$2。0$发布"
+      .to be_equivalent_to "版本$2.0$发布" # decimals keep the ASCII period
     expect(c.l10n("1,"))
       .to be_equivalent_to "1，"
   end
@@ -784,5 +784,26 @@ RSpec.describe IsoDoc::I18n do
       .to eq "mulierum"
     expect(c_fr.populate("women_liquid"))
       .to eq "mulierum"
+  end
+end
+
+RSpec.describe "CJK decimal guard" do
+  it "does not convert periods between digits to full-width" do
+    yaml = File.expand_path("../assets/zh-Hans.yaml", __dir__)
+    i18n = IsoDoc::I18n.new("zh", "Hans", i18nyaml: yaml)
+    out = i18n.l10n("IFC2x3 CV2.0", "zh", "Hans")
+    expect(out).to eq("IFC2x3 CV2.0")
+    out = i18n.l10n("标准说明 1.0 版", "zh", "Hans")
+    expect(out).to include("1.0")
+    expect(out).not_to include("1。0")
+  end
+
+  it "still converts sentence periods and number dashes in CJK context" do
+    yaml = File.expand_path("../assets/zh-Hans.yaml", __dir__)
+    i18n = IsoDoc::I18n.new("zh", "Hans", i18nyaml: yaml)
+    out = i18n.l10n("文档结束. 下一个", "zh", "Hans")
+    expect(out).to include("。")
+    out = i18n.l10n("算3–9", "zh", "Hans")
+    expect(out).to include("3〜9")
   end
 end
