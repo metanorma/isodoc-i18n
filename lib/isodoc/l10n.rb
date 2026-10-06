@@ -145,11 +145,23 @@ module IsoDoc
 
     def l10_context_valid?(context, idx, delim, regex)
       l10n_context_found_delimiter?(context[idx], delim) or return false
+      # A period with digits on both sides is a decimal point, not
+      # punctuation: full-width conversion of "CV2.0" -> "CV2。0" is
+      # never wanted, in any mode. Number ranges ("3-9", "3〜9") are
+      # dash delimiters and stay convertible.
+      delim[0].is_a?(String) && %w(. , ; :).include?(delim[0]) and
+        return false if l10n_delimiter_decimal?(context, idx)
+
       regex.nil? and return true
       regex.detect do |r|
         r[0].match?(context[0...idx].join) && # preceding context
           r[1].match?(context[(idx + 1)..-1].join) # foll context
       end
+    end
+
+    def l10n_delimiter_decimal?(context, idx)
+      context[0...idx].join.match?(/[0-9]$/) &&
+        context[(idx + 1)..-1].join.match?(/\A[0-9]/)
     end
 
     def l10n_context_found_delimiter?(token, delim)
