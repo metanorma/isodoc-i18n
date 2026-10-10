@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   end
   spec.required_ruby_version = Gem::Requirement.new(">= 3.2.0")
 
-  spec.add_dependency "base64", ">= 1.1"
+  spec.add_dependency "base64", ">= 0.1.0"
   spec.add_dependency "htmlentities", "~> 4.3.4"
   spec.add_dependency "japanese_calendar"
   spec.add_dependency "liquid", "~> 5"
