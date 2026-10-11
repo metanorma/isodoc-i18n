@@ -120,7 +120,15 @@ module IsoDoc
         end
         ret
       when Array then ret.map { |n| normalise_hash(n) }
-      when String then cleanup_entities(ret.unicode_normalize(:nfc))
+      when String
+        # Private copy: psych interns equal strings across loads, and an
+        # in-place relabel can poison every later consumer (isodoc#850 —
+        # intermittent "invalid byte sequence in UTF-8" under
+        # unicode_normalize when a shared string arrives mislabelled).
+        cleaned = +"#{ret}"
+        cleaned.force_encoding(Encoding::UTF_8)
+        cleaned.scrub! unless cleaned.valid_encoding?
+        cleanup_entities(cleaned.unicode_normalize(:nfc))
       else ret
       end
     end
