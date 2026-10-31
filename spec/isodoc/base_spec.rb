@@ -39,7 +39,7 @@ RSpec.describe IsoDoc::I18n do
     expect(c.text).to eq "text2"
     expect(c.labels["text"]).to eq("text2")
     expect(c.at).to eq "at"
-    expect(c.hashx).to be_equivalent_to({ "key1" => "val1", "key2" => "val2" })
+    expect(c.hashx).to eq({ "key1" => "val1", "key2" => "val2" })
     expect(c.arrx).to eq(["arr1", "arr2"])
     expect(c.labels["arrx"]).to eq(["arr1", "arr2"])
     expect(c.get).not_to eq("text2")
@@ -87,60 +87,60 @@ RSpec.describe IsoDoc::I18n do
                          i18nhash: YAML.load_file("spec/assets/new.yaml"))
     expect(c.text).to eq "text2"
     expect(c.at).to eq "at"
-    expect(c.hashx).to be_equivalent_to({ "key1" => "val1", "key2" => "val2" })
+    expect(c.hashx).to eq({ "key1" => "val1", "key2" => "val2" })
     expect(c.arrx).to eq ["arr1", "arr2"]
   end
 
   it "does English localisation" do
     c = IsoDoc::I18n.new("en", "Latn")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_xml_equivalent_to "Code (hello, world.)"
     expect(c.l10n("<a>Code (he<b>l</b>lo, world.)</a>"))
-      .to be_equivalent_to "<a>Code (he<b>l</b>lo, world.)</a>"
+      .to be_xml_equivalent_to "<a>Code (he<b>l</b>lo, world.)</a>"
     expect(c.l10n("<a>Code (he<esc><b>l</b>lo</esc>, world.)</a>"))
-      .to be_equivalent_to "<a>Code (he<b>l</b>lo, world.)</a>"
+      .to be_xml_equivalent_to "<a>Code (he<b>l</b>lo, world.)</a>"
   end
 
   it "does Traditional Chinese localisation" do
     c = IsoDoc::I18n.new("zh", "Hant", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("&lt;&lt;a&gt;&gt;"))
-      .to be_equivalent_to "&lt;&lt;a&gt;&gt;"
+      .to be_xml_equivalent_to "&lt;&lt;a&gt;&gt;"
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code （hello， world。）"
+      .to be_xml_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
-      .to be_equivalent_to "计算机代码（你好，世界。）"
+      .to be_xml_equivalent_to "计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
+      .to be_xml_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
     expect(c.l10n("3–9a, 算3–9, 壹–贰,  三–三"))
-      .to be_equivalent_to "3〜9a，算3〜9，壹〜贰，三〜三"
+      .to be_xml_equivalent_to "3〜9a，算3〜9，壹〜贰，三〜三"
     expect(c.l10n("Paris–New York, 巴黎–纽约"))
-      .to be_equivalent_to "Paris–New York，巴黎–纽约"
+      .to be_xml_equivalent_to "Paris–New York，巴黎–纽约"
     expect(c.l10n("3<span>)</span>算<span>)</span>3)<span>算)</span>3"))
-      .to be_equivalent_to "3<span>）</span>算<span>）</span>3）<span>算）</span>3"
+      .to be_xml_equivalent_to "3<span>）</span>算<span>）</span>3）<span>算）</span>3"
     expect(c.l10n("<span>)</span>算<span>)</span>)<span>算)</span>"))
-      .to be_equivalent_to "<span>）</span>算<span>）</span>）<span>算）</span>"
+      .to be_xml_equivalent_to "<span>）</span>算<span>）</span>）<span>算）</span>"
     expect(c.l10n("第    1〜1表"))
-      .to be_equivalent_to "第1〜1表"
+      .to be_xml_equivalent_to "第1〜1表"
   end
 
   it "does Simplified Chinese localisation" do
     c = IsoDoc::I18n.new("zh", "Hans", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code （hello， world。）"
+      .to be_xml_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
-      .to be_equivalent_to "计算机代码（你好，世界。）"
+      .to be_xml_equivalent_to "计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
+      .to be_xml_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
   end
 
   it "does Japanese localisation" do
     c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code （hello， world。）"
+      .to be_xml_equivalent_to "Code （hello， world。）"
     expect(c.l10n("计算机代码 (你好, 世界.)"))
-      .to be_equivalent_to "计算机代码（你好，世界。）"
+      .to be_xml_equivalent_to "计算机代码（你好，世界。）"
     expect(c.l10n("<a>计算机代码</a> (<b>你好,</b> 世界.)"))
-      .to be_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
+      .to be_xml_equivalent_to "<a>计算机代码</a>（<b>你好，</b> 世界。）"
   end
 
   it "does Chinese localisation with esc tags" do
@@ -152,10 +152,10 @@ RSpec.describe IsoDoc::I18n do
     # spaces are preserved
     # because the complex regex requires Latin to be directly followed by CJK
     expect(c.l10n("你好 <esc>a<u>b</u>c</esc> 世界"))
-      .to be_equivalent_to "你好 a<u>b</u>c 世界"
+      .to be_xml_equivalent_to "你好 a<u>b</u>c 世界"
     # Input without spaces - output should also have no spaces
     expect(c.l10n("计算机代码<esc>(hello, world.)</esc>你好"))
-      .to be_equivalent_to "计算机代码(hello, world.)你好"
+      .to be_xml_equivalent_to "计算机代码(hello, world.)你好"
 
     # With cjk-latin-separator set to "", simpler regex patterns are used
     # and spaces between CJK and Latin are removed correctly
@@ -164,13 +164,13 @@ RSpec.describe IsoDoc::I18n do
     c.set("punct", punct)
 
     expect(c.l10n("你好 <esc>a<u>b</u>c</esc> 世界"))
-      .to be_equivalent_to "你好a<u>b</u>c世界"
+      .to be_xml_equivalent_to "你好a<u>b</u>c世界"
     # Input with spaces - with cjk-latin-separator="", spaces are removed
     # because the regex skips punctuation to find Latin context
     expect(c.l10n("计算机代码 <esc>(hello, world.)</esc> 你好"))
-      .to be_equivalent_to "计算机代码(hello, world.)你好"
+      .to be_xml_equivalent_to "计算机代码(hello, world.)你好"
     expect(c.l10n("你好, <esc>world</esc> 世界."))
-      .to be_equivalent_to "你好，world世界。"
+      .to be_xml_equivalent_to "你好，world世界。"
 
     # Test with namespaced XML (esc inside elements with xmlns)
     input = '<semx xmlns="http://riboseinc.com/isoxml" element="source">' \
@@ -188,7 +188,7 @@ RSpec.describe IsoDoc::I18n do
                '</origin>、を一部変更し，<semx element="modification">' \
                'The term "cargo rice" （および類似の用語）is shown as deprecated' \
                "</semx></semx>"
-    expect(c.l10n(input)).to be_equivalent_to expected
+    expect(c.l10n(input)).to be_xml_equivalent_to expected
   end
 
   it "skips punctuation localisation inside <tt> (auto-wraps in <esc>)" do
@@ -203,158 +203,158 @@ RSpec.describe IsoDoc::I18n do
     # surrounding Japanese context would otherwise license conversion.
     # Surrounding caption-delim colon is still allowed to localise.
     expect(c.l10n("留意事項 2: <tt>gml:id</tt>の付与ルール"))
-      .to be_equivalent_to "留意事項2： <tt>gml:id</tt>の付与ルール"
+      .to be_xml_equivalent_to "留意事項2： <tt>gml:id</tt>の付与ルール"
 
     # Other Latin punctuation inside <tt> is likewise preserved.
     expect(c.l10n("see <tt>foo, bar; baz.</tt> 説明"))
-      .to be_equivalent_to "see <tt>foo, bar; baz.</tt> 説明"
+      .to be_xml_equivalent_to "see <tt>foo, bar; baz.</tt> 説明"
 
     # <tt> with nested markup: inner markup and inner Latin colon both kept.
     expect(c.l10n("<tt>a<u>b:c</u>d</tt>"))
-      .to be_equivalent_to "<tt>a<u>b:c</u>d</tt>"
+      .to be_xml_equivalent_to "<tt>a<u>b:c</u>d</tt>"
 
     # Pre-existing <esc> inside <tt> is idempotent — no double-wrap, no leak.
     expect(c.l10n("<tt><esc>gml:id</esc></tt>"))
-      .to be_equivalent_to "<tt>gml:id</tt>"
+      .to be_xml_equivalent_to "<tt>gml:id</tt>"
 
     # French: same protection, since l10n_fr shares l10n_prep.
     c_fr = IsoDoc::I18n.new("fr", "Latn")
     expect(c_fr.l10n("voir <tt>gml:id</tt> ici"))
-      .to be_equivalent_to "voir <tt>gml:id</tt> ici"
+      .to be_xml_equivalent_to "voir <tt>gml:id</tt> ici"
   end
 
   it "does CJK script mixing localisation" do
     c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
     expect(c.l10n("计算机代码： Japan"))
-      .to be_equivalent_to "计算机代码： Japan"
+      .to be_xml_equivalent_to "计算机代码： Japan"
     expect(c.l10n("Japan：计算机代码"))
-      .to be_equivalent_to "Japan：计算机代码"
+      .to be_xml_equivalent_to "Japan：计算机代码"
     expect(c.l10n("(Japan), 计算机代码"))
-      .to be_equivalent_to "（Japan），计算机代码"
+      .to be_xml_equivalent_to "（Japan），计算机代码"
     expect(c.l10n("(计算机代码), Japan"))
-      .to be_equivalent_to "（计算机代码）， Japan"
+      .to be_xml_equivalent_to "（计算机代码）， Japan"
     expect(c.l10n("Japan, (计算机代码)"))
-      .to be_equivalent_to "Japan，（计算机代码）"
+      .to be_xml_equivalent_to "Japan，（计算机代码）"
     expect(c.l10n("计算机代码, (Japan)"))
-      .to be_equivalent_to "计算机代码，（Japan）"
+      .to be_xml_equivalent_to "计算机代码，（Japan）"
     expect(c.l10n("计算机代码 123"))
-      .to be_equivalent_to "计算机代码123"
+      .to be_xml_equivalent_to "计算机代码123"
     expect(c.l10n("123 计算机代码"))
-      .to be_equivalent_to "123 计算机代码"
+      .to be_xml_equivalent_to "123 计算机代码"
     expect(c.l10n("版本 2.0 发布"))
-      .to be_equivalent_to "版本2.0 发布" # decimals keep the ASCII period
+      .to be_xml_equivalent_to "版本2.0 发布" # decimals keep the ASCII period
     expect(c.l10n("1,"))
-      .to be_equivalent_to "1，"
+      .to be_xml_equivalent_to "1，"
 
     expect(c.l10n("Code (hello, world.)", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_xml_equivalent_to "Code (hello, world.)"
     expect(c.l10n("计算机代码: Japan", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
-      .to be_equivalent_to "计算机代码： Japan"
+      .to be_xml_equivalent_to "计算机代码： Japan"
     expect(c.l10n("Japan: 计算机代码", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
-      .to be_equivalent_to "Japan: 计算机代码"
+      .to be_xml_equivalent_to "Japan: 计算机代码"
     expect(c.l10n("(Japan), 计算机代码", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
-      .to be_equivalent_to "(Japan), 计算机代码"
+      .to be_xml_equivalent_to "(Japan), 计算机代码"
     expect(c.l10n("(计算机代码), Japan", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
-      .to be_equivalent_to "（计算机代码）， Japan"
+      .to be_xml_equivalent_to "（计算机代码）， Japan"
     expect(c.l10n("Japan, (计算机代码)", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
-      .to be_equivalent_to "Japan, （计算机代码）"
+      .to be_xml_equivalent_to "Japan, （计算机代码）"
     expect(c.l10n("计算机代码, (Japan)", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
-      .to be_equivalent_to "计算机代码， (Japan)"
+      .to be_xml_equivalent_to "计算机代码， (Japan)"
     expect(c.l10n("计算机代码 123", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
-      .to be_equivalent_to "计算机代码123"
+      .to be_xml_equivalent_to "计算机代码123"
     expect(c.l10n("123 计算机代码", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
-      .to be_equivalent_to "123 计算机代码"
+      .to be_xml_equivalent_to "123 计算机代码"
     expect(c.l10n("版本 2.0 发布", "ja", "Jpan",
                   { proportional_mixed_cjk: true }))
-      .to be_equivalent_to "版本2.0 发布"
+      .to be_xml_equivalent_to "版本2.0 发布"
     expect(c.l10n("1,"))
-      .to be_equivalent_to "1，"
+      .to be_xml_equivalent_to "1，"
 
     c = IsoDoc::I18n.new("ja", "Jpan", i18nyaml: "spec/assets/zh-Hans.yaml")
     punct = c.get["punct"]
     punct["cjk-latin-separator"] = "$"
     c.set("punct", punct)
     expect(c.l10n("计算机代码: Japan"))
-      .to be_equivalent_to "计算机代码：$Japan"
+      .to be_xml_equivalent_to "计算机代码：$Japan"
     expect(c.l10n("Japan：计算机代码"))
-      .to be_equivalent_to "Japan：计算机代码"
+      .to be_xml_equivalent_to "Japan：计算机代码"
     expect(c.l10n("(Japan), 计算机代码"))
-      .to be_equivalent_to "（Japan），计算机代码"
+      .to be_xml_equivalent_to "（Japan），计算机代码"
     expect(c.l10n("(计算机代码), Japan"))
-      .to be_equivalent_to "（计算机代码），$Japan"
+      .to be_xml_equivalent_to "（计算机代码），$Japan"
     expect(c.l10n("Japan, (计算机代码)"))
-      .to be_equivalent_to "Japan，（计算机代码）"
+      .to be_xml_equivalent_to "Japan，（计算机代码）"
     expect(c.l10n("计算机代码, (Japan)"))
-      .to be_equivalent_to "计算机代码，（Japan）"
+      .to be_xml_equivalent_to "计算机代码，（Japan）"
     expect(c.l10n("计算机代码 123"))
-      .to be_equivalent_to "计算机代码$123"
+      .to be_xml_equivalent_to "计算机代码$123"
     expect(c.l10n("123 计算机代码"))
-      .to be_equivalent_to "123$计算机代码"
+      .to be_xml_equivalent_to "123$计算机代码"
     expect(c.l10n("版本 2.0 发布"))
-      .to be_equivalent_to "版本$2.0$发布" # decimals keep the ASCII period
+      .to be_xml_equivalent_to "版本$2.0$发布" # decimals keep the ASCII period
     expect(c.l10n("1,"))
-      .to be_equivalent_to "1，"
+      .to be_xml_equivalent_to "1，"
   end
 
   it "does Hebrew RTL localisation" do
     c = IsoDoc::I18n.new("en", "Hebr")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_xml_equivalent_to "Code (hello, world.)"
     expect(c.l10n("Code (hello, world.)", "en", "Latn"))
-      .to be_equivalent_to "&#x200e;Code (hello, world.)&#x200e;"
+      .to be_xml_equivalent_to "&#x200e;Code (hello, world.)&#x200e;"
     c = IsoDoc::I18n.new("en", "Latn")
     expect(c.l10n("Code (hello, world.)", "en", "Hebr"))
-      .to be_equivalent_to "&#x200f;Code (hello, world.)&#x200f;"
+      .to be_xml_equivalent_to "&#x200f;Code (hello, world.)&#x200f;"
   end
 
   it "does Arabic RTL localisation" do
     c = IsoDoc::I18n.new("en", "Arab")
     expect(c.l10n("Code (hello, world.)"))
-      .to be_equivalent_to "Code (hello, world.)"
+      .to be_xml_equivalent_to "Code (hello, world.)"
     expect(c.l10n("Code (hello, world.)", "en", "Latn"))
-      .to be_equivalent_to "&#x200e;Code (hello, world.)&#x200e;"
+      .to be_xml_equivalent_to "&#x200e;Code (hello, world.)&#x200e;"
     c = IsoDoc::I18n.new("en", "Latn")
     expect(c.l10n("Code (hello, world.)", "en", "Arab"))
-      .to be_equivalent_to "&#x61c;Code (hello, world.)&#x61c;"
+      .to be_xml_equivalent_to "&#x61c;Code (hello, world.)&#x61c;"
   end
 
   it "does French localisation" do
     e = HTMLEntities.new
     c = IsoDoc::I18n.new("fr", "Latn")
     expect(c.l10n("&lt;&lt;a&gt;&gt;"))
-      .to be_equivalent_to "&lt;&lt;a&gt;&gt;"
+      .to be_xml_equivalent_to "&lt;&lt;a&gt;&gt;"
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
+      .to be_xml_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"
     expect(e.encode(c.l10n("Code; &#xab;code&#xbb; and: code!"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
+      .to be_xml_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"
     expect(e.encode(c.l10n("Code; « code&#x202f;» and: code !"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab; code&#x202f;&#xbb; " \
+      .to be_xml_equivalent_to "Code&#x202f;; &#xab; code&#x202f;&#xbb; " \
                            "and&#xa0;: code !"
     c = IsoDoc::I18n.new("fr", "Latn", locale: "FR")
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
+      .to be_xml_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#xa0;: code&#x202f;!"
     expect(c.l10n("<a>Code</a>;<a> </a><a>«</a><a>c</a>ode» and: code!"))
-      .to be_equivalent_to "<a>Code</a>\u202f;<a> </a><a>«\u202f</a><a>c</a>ode\u202f» and\u00a0: code\u202f!"
+      .to be_xml_equivalent_to "<a>Code</a>\u202f;<a> </a><a>«\u202f</a><a>c</a>ode\u202f» and\u00a0: code\u202f!"
     c = IsoDoc::I18n.new("fr", "Latn", locale: "CH")
     expect(e.encode(c.l10n("Code; «code» and: code!"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
+      .to be_xml_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#x202f;: code&#x202f;!"
     expect(c.l10n("<a>Code</a>;<a> </a><a>«</a><a>c</a>ode» and: code!"))
-      .to be_equivalent_to "<a>Code</a>\u202f;<a> </a><a>«\u202f</a><a>c</a>ode\u202f» and\u202f: code\u202f!"
+      .to be_xml_equivalent_to "<a>Code</a>\u202f;<a> </a><a>«\u202f</a><a>c</a>ode\u202f» and\u202f: code\u202f!"
     expect(e.encode(c.l10n("http://xyz a;b"), :hexadecimal))
-      .to be_equivalent_to "http://xyz a;b"
+      .to be_xml_equivalent_to "http://xyz a;b"
   end
 
   it "does French localisation with esc tags" do
@@ -362,11 +362,11 @@ RSpec.describe IsoDoc::I18n do
     c = IsoDoc::I18n.new("fr", "Latn")
     # Text inside <esc> should not be processed, and <esc> tags should be stripped
     expect(c.l10n("hello <esc>a<em>b</em>c</esc> d"))
-      .to be_equivalent_to "hello a<em>b</em>c d"
+      .to be_xml_equivalent_to "hello a<em>b</em>c d"
     expect(e.encode(c.l10n("Code; <esc>«code»</esc> and: code!"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab;code&#xbb; and&#xa0;: code&#x202f;!"
+      .to be_xml_equivalent_to "Code&#x202f;; &#xab;code&#xbb; and&#xa0;: code&#x202f;!"
     expect(e.encode(c.l10n("Text: <esc>word</esc> more!"), :hexadecimal))
-      .to be_equivalent_to "Text&#xa0;: word more&#x202f;!"
+      .to be_xml_equivalent_to "Text&#xa0;: word more&#x202f;!"
   end
 
   it "does French localisation with options hash" do
@@ -377,12 +377,12 @@ RSpec.describe IsoDoc::I18n do
              c.l10n("Code; «code» and: code!", "fr", "Latn",
                     { locale: "CH" }), :hexadecimal
            ))
-      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
+      .to be_xml_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#x202f;: code&#x202f;!"
     # Compare with constructor-set locale
     c_ch = IsoDoc::I18n.new("fr", "Latn", locale: "CH")
     expect(e.encode(c_ch.l10n("Code; «code» and: code!"), :hexadecimal))
-      .to be_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
+      .to be_xml_equivalent_to "Code&#x202f;; &#xab;&#x202f;code&#x202f;&#xbb; " \
                            "and&#x202f;: code&#x202f;!"
   end
 
