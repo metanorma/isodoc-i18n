@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "htmlentities", "~> 4.3.4"
   spec.add_dependency "japanese_calendar"
   spec.add_dependency "liquid", "~> 5"
-  spec.add_dependency "metanorma-utils", ">= 1.7.0"
+  spec.add_dependency "metanorma-utils", "~> 2.0" # contenthash (2.0.0+) required by isodoc 3.7.23+
   spec.add_dependency "roman-numerals"
   spec.add_dependency "twitter_cldr"
 
